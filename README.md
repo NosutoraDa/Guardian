@@ -4,7 +4,7 @@ Guardian is a Laravel digital-safety app for checking suspicious links and files
 
 ## Features
 
-- **Chatbot:** Uses Hugging Face Inference Providers for digital-safety guidance. It has no local scripted-answer fallback.
+- **Chatbot:** Uses the Gemini Developer API for digital-safety guidance. It has no local scripted-answer fallback.
 - **Link checker:** Checks one HTTP(S) URL with VirusTotal after the user consents.
 - **File scanner:** Scans files up to 10 MB with OPSWAT MetaDefender after the user consents. Sample sharing is disabled in the request.
 - **Responsive interface:** Mobile and desktop layouts, animated mascot, radial tool menu, and a Three.js background.
@@ -37,22 +37,22 @@ Add your provider credentials to `guardian-laravel/.env`. Never put API keys in 
 php artisan config:clear
 ```
 
-### Hugging Face chatbot
+### Gemini chatbot
 
-Create a Hugging Face access token with permission to call inference providers:
-
-```dotenv
-HUGGINGFACE_API_TOKEN=hf_your_token_here
-```
-
-Optional endpoint and model settings (already present in `.env.example`):
+Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/apikey), then add it to `guardian-laravel/.env`:
 
 ```dotenv
-HUGGINGFACE_API_URL=https://router.huggingface.co/v1/chat/completions
-HUGGINGFACE_MODEL=Qwen/Qwen2.5-7B-Instruct
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
-The browser sends questions to `POST /api/tanya`; Laravel calls Hugging Face server-side, keeping the token out of the browser. Provider/model availability, pricing, and free quotas depend on your account and may change.
+The app defaults to the stable `gemini-3.5-flash-lite` model. Optional settings (already present in `.env.example`) are:
+
+```dotenv
+GEMINI_API_URL=https://generativelanguage.googleapis.com/v1beta/models
+GEMINI_MODEL=gemini-3.5-flash-lite
+```
+
+The browser sends questions to `POST /api/tanya`; Laravel calls Gemini server-side, keeping the key out of the browser. Gemini's free-tier availability and usage limits depend on the model, account, and region and can change. Google states that content submitted through unpaid Gemini API services may be used to improve its products, so do not send personal, confidential, or sensitive information. Google's current terms say the API is for professional or business use, not consumer use, and prohibit making an API client available to users under 18. Verify that your deployment is eligible and restricted to adults before enabling this integration.
 
 ### VirusTotal link checks
 
@@ -78,7 +78,7 @@ The chatbot is separate from both scanners: links and files are not sent through
 | --- | --- | --- |
 | Links | `/links` | Check a URL with VirusTotal |
 | Files | `/files` | Scan a file with OPSWAT |
-| Chatbot | `/tanya` | Ask Hugging Face for digital-safety guidance |
+| Chatbot | `/tanya` | Ask Gemini for digital-safety guidance |
 
 | API endpoint | Description |
 | --- | --- |

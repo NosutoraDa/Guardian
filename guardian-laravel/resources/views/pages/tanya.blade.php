@@ -14,7 +14,7 @@
                 <p>Tanyakan cara mengenali dan menghadapi penipuan digital.</p>
             </div>
         </div>
-        <p class="warn-note">Jawaban dibuat oleh model open-source melalui Hugging Face. Jangan kirim data pribadi, OTP, PIN, atau kata sandi.</p>
+        <p class="warn-note">Jawaban dibuat oleh Google Gemini. Hanya untuk pengguna berusia 18 tahun ke atas. Pada layanan gratis, Google dapat menggunakan pertanyaan untuk meningkatkan produknya; jangan kirim data pribadi, OTP, PIN, atau kata sandi.</p>
 
         <div id="chat-log" class="chat-log">
             <div class="msg bot">Halo! Tanyakan apa saja seputar penipuan digital, misalnya "apa itu phishing?"</div>

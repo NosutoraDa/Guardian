@@ -16,33 +16,38 @@ class AskController extends Controller
             'question' => ['required', 'string', 'max:500'],
         ]);
 
-        $token = config('guardian.ai.token');
+        $apiKey = config('guardian.ai.api_key');
 
-        if (! \is_string($token) || $token === '') {
+        if (! \is_string($apiKey) || $apiKey === '') {
             return response()->json([
-                'error' => 'Chatbot belum dikonfigurasi. Tambahkan HUGGINGFACE_API_TOKEN di environment server.',
+                'error' => 'Chatbot belum dikonfigurasi. Tambahkan GEMINI_API_KEY di environment server.',
             ], 503);
         }
 
         try {
-            $response = Http::withToken($token)
+            $response = Http::withHeaders(['x-goog-api-key' => $apiKey])
                 ->acceptJson()
                 ->connectTimeout(5)
                 ->timeout(30)
-                ->post(config('guardian.ai.endpoint'), [
-                    'model' => config('guardian.ai.model'),
-                    'messages' => [
-                        [
-                            'role' => 'system',
-                            'content' => 'Kamu adalah Guardian, asisten edukasi keamanan digital berbahasa Indonesia. Jawab dengan jelas dan ringkas. Jangan pernah meminta OTP, PIN, kata sandi, atau data pribadi. Ingatkan pengguna untuk memverifikasi informasi melalui kanal resmi.',
+                ->post(
+                    rtrim(config('guardian.ai.endpoint'), '/').'/'.rawurlencode(config('guardian.ai.model')).':generateContent',
+                    [
+                        'system_instruction' => [
+                            'parts' => [[
+                                'text' => 'Kamu adalah Guardian, asisten edukasi keamanan digital berbahasa Indonesia. Jawab dengan jelas dan ringkas. Jangan pernah meminta OTP, PIN, kata sandi, atau data pribadi. Ingatkan pengguna untuk memverifikasi informasi melalui kanal resmi.',
+                            ]],
                         ],
-                        ['role' => 'user', 'content' => $data['question']],
-                    ],
-                    'max_tokens' => 400,
-                    'temperature' => 0.4,
-                ]);
+                        'contents' => [[
+                            'parts' => [['text' => $data['question']]],
+                        ]],
+                        'generationConfig' => [
+                            'maxOutputTokens' => 400,
+                            'temperature' => 0.4,
+                        ],
+                    ]
+                );
         } catch (ConnectionException $exception) {
-            Log::warning('Hugging Face chat request could not connect.', [
+            Log::warning('Gemini chat request could not connect.', [
                 'message' => $exception->getMessage(),
             ]);
 
@@ -52,7 +57,7 @@ class AskController extends Controller
         }
 
         if (! $response->successful()) {
-            Log::warning('Hugging Face chat request failed.', [
+            Log::warning('Gemini chat request failed.', [
                 'status' => $response->status(),
             ]);
 
@@ -61,10 +66,10 @@ class AskController extends Controller
             ], 502);
         }
 
-        $answer = data_get($response->json(), 'choices.0.message.content');
+        $answer = data_get($response->json(), 'candidates.0.content.parts.0.text');
 
         if (! \is_string($answer) || trim($answer) === '') {
-            Log::warning('Hugging Face chat response did not contain an answer.');
+            Log::warning('Gemini chat response did not contain an answer.');
 
             return response()->json([
                 'error' => 'Layanan chatbot memberikan jawaban yang tidak valid. Coba lagi.',

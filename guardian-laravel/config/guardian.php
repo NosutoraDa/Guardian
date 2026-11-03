@@ -18,9 +18,9 @@ return [
     ],
 
     'ai' => [
-        'endpoint' => env('HUGGINGFACE_API_URL', 'https://router.huggingface.co/v1/chat/completions'),
-        'model' => env('HUGGINGFACE_MODEL', 'Qwen/Qwen2.5-7B-Instruct'),
-        'token' => env('HUGGINGFACE_API_TOKEN'),
+        'endpoint' => env('GEMINI_API_URL', 'https://generativelanguage.googleapis.com/v1beta/models'),
+        'model' => env('GEMINI_MODEL', 'gemini-3.5-flash-lite'),
+        'api_key' => env('GEMINI_API_KEY'),
     ],
 
     'virustotal' => [

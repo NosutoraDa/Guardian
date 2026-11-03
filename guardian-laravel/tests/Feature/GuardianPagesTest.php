@@ -299,13 +299,46 @@ class GuardianPagesTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_chatbot_reports_missing_api_token_without_local_fallback(): void
+    public function test_chatbot_uses_gemini_and_returns_its_answer(): void
     {
-        config(['guardian.ai.token' => null]);
+        config([
+            'guardian.ai.api_key' => 'gemini-test-key',
+            'guardian.ai.model' => 'gemini-test-model',
+        ]);
+        Http::fake([
+            'generativelanguage.googleapis.com/v1beta/models/gemini-test-model:generateContent' => Http::response([
+                'candidates' => [[
+                    'content' => [
+                        'parts' => [['text' => 'Jangan pernah membagikan OTP.']],
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $this->postJson('/api/tanya', [
+            'question' => 'Apa yang harus saya lakukan dengan OTP?',
+        ])->assertOk()
+            ->assertJsonPath('answer', 'Jangan pernah membagikan OTP.');
+
+        Http::assertSent(fn (ClientRequest $request): bool =>
+            $request->method() === 'POST'
+            && str_ends_with($request->url(), '/v1beta/models/gemini-test-model:generateContent')
+            && $request->hasHeader('x-goog-api-key', 'gemini-test-key')
+            && data_get($request->data(), 'contents.0.parts.0.text') === 'Apa yang harus saya lakukan dengan OTP?'
+            && data_get($request->data(), 'system_instruction.parts.0.text') !== null
+        );
+    }
+
+    public function test_chatbot_reports_missing_api_key_without_local_fallback(): void
+    {
+        config(['guardian.ai.api_key' => null]);
+        Http::fake();
 
         $this->postJson('/api/tanya', [
             'question' => 'Apa itu phishing?',
         ])->assertStatus(503)
-            ->assertJsonPath('error', 'Chatbot belum dikonfigurasi. Tambahkan HUGGINGFACE_API_TOKEN di environment server.');
+            ->assertJsonPath('error', 'Chatbot belum dikonfigurasi. Tambahkan GEMINI_API_KEY di environment server.');
+
+        Http::assertNothingSent();
     }
 }

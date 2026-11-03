@@ -51,7 +51,7 @@
         <ul>
             <li><i class="fas fa-check" aria-hidden="true"></i><span><strong>Links:</strong> Periksa satu tautan yang boleh dibagikan dengan VirusTotal. Tautan yang dikirim dapat masuk ke basis data VirusTotal.</span></li>
             <li><i class="fas fa-check" aria-hidden="true"></i><span><strong>Files:</strong> File hingga 10 MB dikirim ke OPSWAT untuk pemindaian. Jangan unggah dokumen sensitif.</span></li>
-            <li><i class="fas fa-check" aria-hidden="true"></i><span><strong>Chatbot:</strong> Pertanyaan diproses oleh Hugging Face; jangan sertakan data pribadi, OTP, PIN, atau kata sandi.</span></li>
+            <li><i class="fas fa-check" aria-hidden="true"></i><span><strong>Chatbot:</strong> Pertanyaan diproses oleh Gemini. Pada layanan gratis, konten dapat digunakan untuk meningkatkan produk Google; jangan sertakan data pribadi, OTP, PIN, atau kata sandi. Hanya untuk pengguna berusia 18 tahun ke atas.</span></li>
         </ul>
     </section>
 
@@ -63,7 +63,7 @@
 </main>
 
 <footer class="footer">
-    Guardian tidak menjamin keamanan 100%. Link yang kamu setujui dikirim ke VirusTotal, file yang kamu setujui dikirim ke OPSWAT, dan pertanyaan chatbot dikirim ke Hugging Face. Jangan kirim data pribadi atau rahasia.
+    Guardian tidak menjamin keamanan 100%. Link yang kamu setujui dikirim ke VirusTotal, file yang kamu setujui dikirim ke OPSWAT, dan pertanyaan chatbot dikirim ke Gemini. Jangan kirim data pribadi atau rahasia.
 </footer>
 
 <script src="{{ asset('js/robot.js') }}?v={{ filemtime(public_path('js/robot.js')) }}"></script>
