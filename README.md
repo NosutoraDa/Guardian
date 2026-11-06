@@ -1,4 +1,4 @@
-# The Trust Trap: Navigating Digital Deception
+# Guardian: Navigating Digital Deception
 
 Guardian is a Laravel digital-safety app for checking suspicious links and files and asking questions about online scams.
 
