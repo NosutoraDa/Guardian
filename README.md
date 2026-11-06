@@ -9,11 +9,16 @@ Guardian is a Laravel digital-safety app for checking suspicious links and files
 - **File scanner:** Scans files up to 10 MB with VirusTotal after the user consents. Public API uploads may be added to VirusTotal's community dataset.
 - **Responsive interface:** Mobile and desktop layouts, animated mascot, radial tool menu, and a Three.js background.
 
-## Requirements
+## Local development requirements
+
+These are the requirements for running Guardian on your own computer with Laravel's local development server. They are not Vercel deployment requirements; Vercel setup will need to be documented separately.
 
 - PHP 8.2+ with `curl`, `fileinfo`, `mbstring`, `openssl`, `pdo_sqlite`, `xml`, and `zip` extensions
 - Composer 2
-- The PHP ZIP extension or an installed `unzip`/7-Zip utility to extract Composer packages
+- The PHP `zip` extension, or an installed `unzip`/7-Zip utility, so Composer can extract packages
+- Internet access and API keys for the external Gemini and VirusTotal features (the rest of the local app can be run without configuring those integrations)
+
+No Node.js installation or separate frontend build step is required for local development.
 
 ## Install and run
 
