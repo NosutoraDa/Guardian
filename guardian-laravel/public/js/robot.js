@@ -1,381 +1,179 @@
-/*
- * Shared Three.js background and SVG mascot presentation for Guardian.
- */
+/* Guardian mascot motion and optional Web Audio feedback. */
 (function () {
-  const STATES = {
-    idle: {
-      label: 'Mode Siaga (Standby)',
-      glow: 'glow-blue',
-      color: '#00E5FF',
-      mouth: 'M 82 116 Q 100 130 118 116',
-      badge: 'state-idle',
-    },
-    scanning: {
-      label: 'Sedang menganalisis...',
-      glow: 'glow-amber',
-      color: '#FBBF24',
-      mouth: 'M 82 120 Q 100 120 118 120',
-      badge: 'state-scanning',
-    },
-    danger: {
-      label: 'Waspada: indikator terdeteksi',
-      glow: 'glow-red',
-      color: '#EF4444',
-      mouth: 'M 82 124 Q 100 106 118 124',
-      badge: 'state-danger',
-    },
-    safe: {
-      label: 'Pemeriksaan selesai',
-      glow: 'glow-green',
-      color: '#10B981',
-      mouth: 'M 80 114 Q 100 134 120 114',
-      badge: 'state-safe',
-    },
+  const states = {
+    idle: { label: 'Mode Siaga', color: '#c38eff', glow: 'glow-blue', mouth: 'M 155 260 Q 200 285 245 260' },
+    scanning: { label: 'Sedang menganalisis...', color: '#fbbf24', glow: 'glow-amber', mouth: 'M 160 266 Q 200 266 240 266' },
+    danger: { label: 'Waspada: indikator terdeteksi', color: '#ef4444', glow: 'glow-red', mouth: 'M 155 280 Q 200 245 245 280' },
+    safe: { label: 'Pemeriksaan selesai', color: '#34d399', glow: 'glow-green', mouth: 'M 150 255 Q 200 300 250 255' },
   };
-
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let pulseTimeout = null;
-  let radialMenuOpen = false;
-  let threeScriptLoading = false;
-  let scene;
-  let camera;
-  let renderer;
-  let terrain;
-  let terrainGeometry;
-  let starField;
-  let raycaster;
-  let pointerPlane;
-  let mouseNdc;
-  let mouseWorld;
-  let animationFrame = null;
-  let lastFrameTime = 0;
-  let isVisible = !document.hidden;
-
-  function setRadialMenu(open) {
-    radialMenuOpen = open;
-    const dial = document.getElementById('radial-dial-container');
-    const track = document.getElementById('arc-track-svg');
-    const radialButton = document.getElementById('toggle-radial-btn');
-    const mascotButton = document.getElementById('mascot-toggle-menu');
-
-    if (dial) {
-      dial.classList.toggle('arc-menu-active', open);
-      dial.setAttribute('aria-hidden', String(!open));
-    }
-    if (track) track.classList.toggle('arc-track-active', open);
-    [radialButton, mascotButton].forEach(button => {
-      if (button) button.setAttribute('aria-expanded', String(open));
-    });
-    document.querySelectorAll('.arc-item').forEach(item => {
-      item.tabIndex = open ? 0 : -1;
-    });
-
-    return radialMenuOpen;
-  }
-
-  function toggleRadialMenu() {
-    const open = setRadialMenu(!radialMenuOpen);
-    setState('idle', open
-      ? 'Pilih salah satu menu inspeksi di sekeliling saya.'
-      : 'Saya Si Guardian, siap membantu menjaga keamanan digitalmu.');
-  }
-
-  function toggleQuickTips(forceOpen) {
-    const panel = document.getElementById('quick-tips-panel');
-    const button = document.getElementById('toggle-quick-tips-btn');
-    if (!panel) return;
-
-    const open = typeof forceOpen === 'boolean' ? forceOpen : panel.hidden;
-    panel.hidden = !open;
-    if (button) button.setAttribute('aria-expanded', String(open));
-  }
+  let audioEnabled = true;
+  let audioContext = null;
+  let particles = [];
+  let frame = null;
 
   function setState(name, message) {
-    const stateName = Object.prototype.hasOwnProperty.call(STATES, name) ? name : 'idle';
-    const state = STATES[stateName];
-    const speech = document.getElementById('speech');
-    const speechText = document.getElementById('speech-text');
-    const status = document.querySelector('.status-badge');
-    const statusText = document.getElementById('status-text');
-    const aura = document.getElementById('robot-glow-aura');
-    const eyes = [
-      document.getElementById('left-eye'),
-      document.getElementById('right-eye'),
-    ];
+    const state = states[name] || states.idle;
+    const text = document.getElementById('speech-text');
+    const eyeLeft = document.getElementById('left-eye');
+    const eyeRight = document.getElementById('right-eye');
     const mouth = document.getElementById('smooth-mouth');
-
-    if (speech) speech.className = 'speech ' + state.glow;
-    if (message && speechText) speechText.textContent = message;
-    if (status) status.className = 'status-badge ' + state.badge;
-    if (statusText) statusText.textContent = state.label;
-    if (aura) aura.className = 'robot-glow ' + state.badge;
-
-    eyes.forEach(eye => {
-      if (eye) eye.setAttribute('fill', state.color);
-    });
-
-    if (mouth) {
-      mouth.setAttribute('d', state.mouth);
-      mouth.setAttribute('stroke', state.color);
+    if (message && text) text.textContent = message;
+    const screen = document.getElementById('guardian-screen');
+    if (screen) screen.setAttribute('fill', name === 'danger' ? '#450a0a' : name === 'safe' ? '#064e3b' : name === 'scanning' ? '#3b0764' : '#231340');
+    if (eyeLeft && eyeRight) {
+      if (name === 'danger') {
+        eyeLeft.innerHTML = '<path d="M 135 185 L 167 225 M 167 185 L 135 225" stroke="#f87171" stroke-width="12" stroke-linecap="round"/>';
+        eyeRight.innerHTML = '<path d="M 233 185 L 265 225 M 265 185 L 233 225" stroke="#f87171" stroke-width="12" stroke-linecap="round"/>';
+      } else if (name === 'safe') {
+        eyeLeft.innerHTML = '<path d="M 130 185 L 165 205 L 130 225" stroke="#34d399" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>';
+        eyeRight.innerHTML = '<path d="M 270 185 L 235 205 L 270 225" stroke="#34d399" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>';
+      } else if (name === 'scanning') {
+        eyeLeft.innerHTML = '<circle cx="151" cy="205" r="22" fill="#c38eff"/>';
+        eyeRight.innerHTML = '<circle cx="249" cy="205" r="22" fill="#c38eff"/>';
+      } else {
+        eyeLeft.innerHTML = '<rect x="135" y="175" width="32" height="60" rx="16" fill="#c38eff"/>';
+        eyeRight.innerHTML = '<rect x="233" y="175" width="32" height="60" rx="16" fill="#c38eff"/>';
+      }
+    }
+    if (mouth) { mouth.setAttribute('d', state.mouth); mouth.setAttribute('stroke', state.color); }
+    const title = document.getElementById('robot-title');
+    if (title) {
+      title.textContent = name === 'idle' ? title.dataset.idleTitle : state.label;
+      title.className = `guardian-status-pill guardian-status-${name || 'idle'}`;
+    }
+    const status = document.getElementById('status-text');
+    if (status) status.textContent = state.label;
+    if (name === 'safe') {
+      const mascot = document.getElementById('robot-svg');
+      mascot?.classList.remove('guardian-safe-reaction');
+      void mascot?.getBoundingClientRect();
+      mascot?.classList.add('guardian-safe-reaction');
+      burst('#34d399'); pulse(); playTone(780);
+      window.setTimeout(() => mascot?.classList.remove('guardian-safe-reaction'), 1800);
     }
   }
 
   function pulse() {
     const mascot = document.getElementById('robot-svg');
     if (!mascot) return;
-
     mascot.classList.remove('robot-pulsing');
     void mascot.getBoundingClientRect();
     mascot.classList.add('robot-pulsing');
-
-    if (pulseTimeout !== null) window.clearTimeout(pulseTimeout);
-    pulseTimeout = window.setTimeout(() => {
-      mascot.classList.remove('robot-pulsing');
-      pulseTimeout = null;
-    }, 1500);
+    window.setTimeout(() => mascot.classList.remove('robot-pulsing'), 1500);
   }
 
-  function updatePointer(event) {
-    if (!camera || !raycaster || !mouseNdc || !mouseWorld) return;
-    mouseNdc.set(
-      (event.clientX / window.innerWidth) * 2 - 1,
-      -(event.clientY / window.innerHeight) * 2 + 1
-    );
-    raycaster.setFromCamera(mouseNdc, camera);
-    raycaster.ray.intersectPlane(pointerPlane, mouseWorld);
-
-    if (terrain) {
-      terrain.material.uniforms.uMouse.value.copy(mouseWorld);
-      terrain.material.uniforms.uMouseActive.value = 1;
-    }
-
-    if (reducedMotion) renderScene(performance.now());
-  }
-
-  function createTerrain(THREE) {
-    const columns = 128;
-    const rows = 118;
-    const spacing = 0.45;
-    const positions = new Float32Array(columns * rows * 3);
-    const offsetX = columns * spacing / 2;
-    const offsetY = rows * spacing / 2;
-
-    for (let row = 0; row < rows; row++) {
-      for (let column = 0; column < columns; column++) {
-        const index = (row * columns + column) * 3;
-        positions[index] = column * spacing - offsetX;
-        positions[index + 1] = row * spacing - offsetY;
-        positions[index + 2] = 0;
-      }
-    }
-
-    terrainGeometry = new THREE.BufferGeometry();
-    terrainGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    terrainGeometry.computeBoundingSphere();
-
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        uTime: { value: 0 },
-        uMouse: { value: new THREE.Vector2(-1000, -1000) },
-        uMouseActive: { value: 0 },
-        uPixelRatio: { value: renderer.getPixelRatio() },
-      },
-      vertexShader: `
-        uniform float uTime;
-        uniform vec2 uMouse;
-        uniform float uMouseActive;
-        uniform float uPixelRatio;
-        varying float vBrightness;
-
-        void main() {
-          vec3 point = position;
-          float distanceToMouse = distance(point.xy, uMouse);
-          float ripple = 0.0;
-
-          if (uMouseActive > 0.5 && distanceToMouse < 2.2) {
-            float influence = 0.5 * (1.0 + cos((distanceToMouse / 2.2) * 3.14159265));
-            ripple = influence * 0.9;
-          }
-
-          float wave = sin(point.x * 0.18 + uTime * 0.75)
-            * cos(point.y * 0.16 - uTime * 0.55) * 0.12;
-          point.z += ripple + wave;
-          vBrightness = 0.68 + ripple * 0.3 + wave * 0.45;
-
-          vec4 viewPosition = modelViewMatrix * vec4(point, 1.0);
-          gl_Position = projectionMatrix * viewPosition;
-          gl_PointSize = clamp(2.5 * uPixelRatio * (7.0 / -viewPosition.z), 1.0, 6.0);
-        }
-      `,
-      fragmentShader: `
-        varying float vBrightness;
-
-        void main() {
-          vec2 centeredPoint = gl_PointCoord - vec2(0.5);
-          float pointDistance = length(centeredPoint);
-          float core = 1.0 - smoothstep(0.12, 0.5, pointDistance);
-          float halo = 1.0 - smoothstep(0.15, 0.72, pointDistance);
-          float alpha = (core * 0.72 + halo * 0.28) * vBrightness;
-          if (alpha < 0.025) discard;
-          gl_FragColor = vec4(0.22, 0.72, 1.0, alpha);
-        }
-      `,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    });
-
-    terrain = new THREE.Points(terrainGeometry, material);
-    terrain.frustumCulled = false;
-    scene.add(terrain);
-  }
-
-  function createStarField(THREE) {
-    const count = 320;
-    const positions = new Float32Array(count * 3);
-    for (let index = 0; index < count; index++) {
-      positions[index * 3] = (Math.random() - 0.5) * 26;
-      positions[index * 3 + 1] = (Math.random() - 0.5) * 18;
-      positions[index * 3 + 2] = -1.5 - Math.random() * 8;
-    }
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const material = new THREE.PointsMaterial({
-      color: 0x38bdf8,
-      size: 0.035,
-      transparent: true,
-      opacity: 0.42,
-      sizeAttenuation: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    });
-
-    starField = new THREE.Points(geometry, material);
-    starField.frustumCulled = false;
-    scene.add(starField);
-  }
-
-  function resizeScene() {
-    if (!camera || !renderer) return;
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(1);
-    if (terrain) terrain.material.uniforms.uPixelRatio.value = renderer.getPixelRatio();
-    renderScene(performance.now());
-  }
-
-  function renderScene(time) {
-    if (!renderer || !scene || !camera) return;
-
-    if (terrain) terrain.material.uniforms.uTime.value = time * 0.001;
-    if (starField && !reducedMotion) starField.rotation.z = Math.sin(time * 0.00008) * 0.025;
-    renderer.render(scene, camera);
-  }
-
-  function animateScene(time) {
-    animationFrame = null;
-    if (!renderer || !isVisible || document.hidden) return;
-
-    if (time - lastFrameTime >= 33) {
-      lastFrameTime = time;
-      renderScene(time);
-    }
-
-    if (!reducedMotion) animationFrame = window.requestAnimationFrame(animateScene);
-  }
-
-  function startScene() {
-    if (animationFrame !== null || !renderer || !isVisible || document.hidden) return;
-    if (reducedMotion) {
-      renderScene(performance.now());
-      return;
-    }
-    animationFrame = window.requestAnimationFrame(animateScene);
-  }
-
-  function stopScene() {
-    if (animationFrame === null) return;
-    window.cancelAnimationFrame(animationFrame);
-    animationFrame = null;
-  }
-
-  function initializeThreeScene() {
-    const container = document.getElementById('canvas-container');
-    const THREE = window.THREE;
-    if (!container || !THREE) {
-      console.error('Guardian 3D background could not initialize because its canvas or Three.js library is unavailable.');
-      return;
-    }
-
+  function playTone(frequency = 520) {
+    if (!audioEnabled) return;
     try {
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 0, 7);
-      renderer = new THREE.WebGLRenderer({
-        alpha: true,
-        antialias: false,
-        powerPreference: 'low-power',
-      });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(1);
-      renderer.setClearColor(0x030712, 0);
-      container.replaceChildren(renderer.domElement);
-
-      raycaster = new THREE.Raycaster();
-      pointerPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-      mouseNdc = new THREE.Vector2(-9999, -9999);
-      mouseWorld = new THREE.Vector3(-1000, -1000, 0);
-
-      createTerrain(THREE);
-      createStarField(THREE);
-      window.addEventListener('resize', resizeScene, { passive: true });
-      window.addEventListener('pointermove', updatePointer, { passive: true });
-      window.addEventListener('pointerleave', () => {
-        if (terrain) terrain.material.uniforms.uMouseActive.value = 0;
-      }, { passive: true });
-      document.addEventListener('visibilitychange', () => {
-        isVisible = !document.hidden;
-        if (isVisible) startScene();
-        else stopScene();
-      });
-
-      renderScene(0);
-      startScene();
-    } catch (error) {
-      console.error('Guardian 3D background could not initialize.', error);
-    }
+      audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'suspended') audioContext.resume();
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = 'sine'; oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(.045, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.001, audioContext.currentTime + .16);
+      oscillator.connect(gain); gain.connect(audioContext.destination);
+      oscillator.start(); oscillator.stop(audioContext.currentTime + .16);
+    } catch (_) { /* Audio is an optional enhancement. */ }
   }
 
-  function loadThreeScene() {
-    if (window.THREE) {
-      initializeThreeScene();
-      return;
-    }
-    if (threeScriptLoading) return;
-    threeScriptLoading = true;
-
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-    script.async = true;
-    script.onload = initializeThreeScene;
-    script.onerror = () => {
-      console.error('Guardian 3D background could not load the Three.js library.');
-    };
-    document.head.appendChild(script);
-  }
-
-  document.getElementById('toggle-radial-btn')?.addEventListener('click', toggleRadialMenu);
-  document.getElementById('mascot-toggle-menu')?.addEventListener('click', toggleRadialMenu);
-  document.getElementById('toggle-quick-tips-btn')?.addEventListener('click', () => toggleQuickTips());
-  document.getElementById('close-quick-tips-btn')?.addEventListener('click', () => toggleQuickTips(false));
-
-  setRadialMenu(false);
-  window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(() => setRadialMenu(true));
+  const soundButton = document.getElementById('guardian-sound-toggle');
+  soundButton?.addEventListener('click', () => {
+    audioEnabled = !audioEnabled;
+    soundButton.setAttribute('aria-pressed', String(audioEnabled));
+    soundButton.innerHTML = audioEnabled
+      ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg><span>Suara Aktif</span>'
+      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg><span>Suara Nonaktif</span>';
+    if (audioEnabled) playTone(660);
   });
-  loadThreeScene();
 
-  window.Robot = { setState, pulse, toggleMenu: toggleRadialMenu };
+  const stage = document.getElementById('guardian-avatar-wrap');
+  const canvas = document.getElementById('guardian-particles');
+  const ctx = canvas?.getContext('2d');
+  function resizeCanvas() {
+    if (!canvas || !stage) return;
+    const rect = stage.getBoundingClientRect();
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = rect.width * ratio; canvas.height = rect.height * ratio;
+    canvas.style.width = `${rect.width}px`; canvas.style.height = `${rect.height}px`;
+    ctx?.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+  function burst(color = '#c084fc') {
+    if (!canvas || !stage || reducedMotion) return;
+    const rect = stage.getBoundingClientRect();
+    for (let i = 0; i < 26; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1 + Math.random() * 2.2;
+      particles.push({ x: rect.width / 2, y: rect.height / 2, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1, size: 2 + Math.random() * 3, color });
+    }
+    if (!frame) frame = requestAnimationFrame(drawParticles);
+  }
+  function drawParticles() {
+    frame = null;
+    if (!ctx || !canvas) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles = particles.filter(p => p.life > 0);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.life -= .018;
+      ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    if (particles.length) frame = requestAnimationFrame(drawParticles);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function react() {
+    const left = document.getElementById('left-eye');
+    const right = document.getElementById('right-eye');
+    const mouth = document.getElementById('smooth-mouth');
+    if (!left || !right || !mouth) return;
+    const moods = ['wink', 'surprised', 'happy'];
+    const mood = moods[Math.floor(Math.random() * moods.length)];
+    const eyeMarkup = '<rect x="135" y="175" width="32" height="60" rx="16" fill="#c38eff"/>';
+    const eyeMarkupRight = '<rect x="233" y="175" width="32" height="60" rx="16" fill="#c38eff"/>';
+    if (mood === 'surprised') {
+      left.innerHTML = '<circle cx="151" cy="205" r="22" fill="#c38eff"/>';
+      right.innerHTML = '<circle cx="249" cy="205" r="22" fill="#c38eff"/>';
+      mouth.setAttribute('d', 'M 185 265 C 185 250, 215 250, 215 265 C 215 280, 185 280, 185 265 Z');
+    } else if (mood === 'wink') {
+      left.innerHTML = '<path d="M 135 205 Q 151 193 167 205" stroke="#c38eff" stroke-width="9" stroke-linecap="round"/>';
+      right.innerHTML = eyeMarkupRight;
+      mouth.setAttribute('d', 'M 158 260 Q 200 286 242 260');
+    } else {
+      left.innerHTML = eyeMarkup; right.innerHTML = eyeMarkupRight;
+      mouth.setAttribute('d', 'M 155 260 Q 200 292 245 260');
+    }
+    pulse(); burst(); playTone(mood === 'surprised' ? 780 : 560);
+    const svg = document.getElementById('robot-svg');
+    svg?.classList.add('guardian-reaction-pop');
+    window.setTimeout(() => {
+      left.innerHTML = eyeMarkup; right.innerHTML = eyeMarkupRight;
+      mouth.setAttribute('d', 'M 155 260 Q 200 285 245 260');
+      svg?.classList.remove('guardian-reaction-pop');
+    }, 900);
+  }
+  document.getElementById('mascot-toggle-menu')?.addEventListener('click', react);
+  window.addEventListener('resize', resizeCanvas, { passive: true });
+  resizeCanvas();
+
+  if (!reducedMotion) {
+    window.setInterval(() => {
+      const eyes = [document.getElementById('left-eye'), document.getElementById('right-eye')];
+      eyes.forEach(eye => { if (eye) { eye.style.transformBox = 'fill-box'; eye.style.transformOrigin = 'center'; eye.style.transform = 'scaleY(.12)'; } });
+      window.setTimeout(() => eyes.forEach(eye => { if (eye) eye.style.transform = ''; }), 140);
+    }, 4600);
+    document.addEventListener('pointermove', event => {
+      const face = document.getElementById('guardian-face');
+      const svg = document.getElementById('robot-svg');
+      if (!face || !svg) return;
+      const rect = svg.getBoundingClientRect();
+      const dx = Math.max(-2, Math.min(2, (event.clientX - (rect.left + rect.width / 2)) / 75));
+      const dy = Math.max(-2, Math.min(2, (event.clientY - (rect.top + rect.height / 2)) / 75));
+      face.style.transform = `translate(${dx * 3}px, ${dy * 3}px)`;
+    }, { passive: true });
+  }
+
+  window.Robot = { setState, pulse, react, toggleMenu: () => {}, burst };
 })();

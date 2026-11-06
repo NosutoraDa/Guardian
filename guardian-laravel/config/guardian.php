@@ -27,8 +27,4 @@ return [
         'api_key' => env('VIRUSTOTAL_API_KEY'),
     ],
 
-    'metadefender' => [
-        'api_key' => env('OPSWAT_API_KEY'),
-    ],
-
 ];

@@ -6,7 +6,7 @@ Guardian is a Laravel digital-safety app for checking suspicious links and files
 
 - **Chatbot:** Uses the Gemini Developer API for digital-safety guidance. It has no local scripted-answer fallback.
 - **Link checker:** Checks one HTTP(S) URL with VirusTotal after the user consents.
-- **File scanner:** Scans files up to 10 MB with OPSWAT MetaDefender after the user consents. Sample sharing is disabled in the request.
+- **File scanner:** Scans files up to 10 MB with VirusTotal after the user consents. Public API uploads may be added to VirusTotal's community dataset.
 - **Responsive interface:** Mobile and desktop layouts, animated mascot, radial tool menu, and a Three.js background.
 
 ## Requirements
@@ -62,13 +62,9 @@ VIRUSTOTAL_API_KEY=your_virustotal_key_here
 
 The Links page requires explicit consent. Submitted or queried URLs may be added to VirusTotal's dataset; do not check private, personal, confidential, or one-time URLs. The public API has strict quotas and terms, and may not be used in commercial products or business workflows without the appropriate permission. Confirm current [API quotas and terms](https://docs.virustotal.com/reference/public-vs-premium-api) before deployment. A result with no detections is not a guarantee of safety.
 
-### OPSWAT file checks
+### VirusTotal file checks
 
-```dotenv
-OPSWAT_API_KEY=your_opswat_key_here
-```
-
-Files are transmitted to OPSWAT MetaDefender for analysis with `samplesharing: 0`; Guardian does not keep a permanent copy. Do not upload sensitive, personal, or confidential files. Confirm the provider's current availability, quotas, retention policy, and terms before deployment. Scan results are not a guarantee that a file is safe.
+The File page uses the same `VIRUSTOTAL_API_KEY` as link checks. The page requires explicit consent before uploading. Files submitted through VirusTotal's public API can be added to its dataset and made accessible to the community; do not upload sensitive, personal, or confidential files. The VirusTotal public API has strict quotas and is not permitted for commercial products or services without appropriate permission. Confirm current [API quotas and terms](https://docs.virustotal.com/reference/public-vs-premium-api) before deployment. Scan results are not a guarantee that a file is safe.
 
 The chatbot is separate from both scanners: links and files are not sent through the chatbot.
 
@@ -77,7 +73,8 @@ The chatbot is separate from both scanners: links and files are not sent through
 | Page | Route | Description |
 | --- | --- | --- |
 | Links | `/links` | Check a URL with VirusTotal |
-| Files | `/files` | Scan a file with OPSWAT |
+| Files | `/files` | Scan a file with VirusTotal |
+| File report | `/files/report/{sha256}` | View VirusTotal's engine results in Guardian |
 | Chatbot | `/tanya` | Ask Gemini for digital-safety guidance |
 
 | API endpoint | Description |

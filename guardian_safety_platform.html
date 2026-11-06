@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardian - Platform Deteksi Keamanan & Analisis Risiko</title>
+    
+    <!-- Google Fonts & Tailwind CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            background-color: #ffffff;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            color: #1e1b4b;
+        }
+
+        /* Canvas background wave */
+        #waveCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Topbar Navigasi Floating Glassmorphism */
+        .top-navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 620px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 18px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(233, 213, 255, 0.85);
+            border-radius: 9999px;
+            box-shadow: 0 12px 32px -10px rgba(126, 34, 206, 0.14), 0 4px 16px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease;
+        }
+
+        /* Brand Logo Guardian */
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: #581c87;
+            text-decoration: none;
+            letter-spacing: -0.03em;
+            z-index: 52;
+        }
+
+        .brand-robot-icon {
+            width: 34px;
+            height: 34px;
+            display: block;
+            filter: drop-shadow(0 4px 10px rgba(168, 85, 247, 0.4));
+            transition: transform 0.3s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+        }
+
+        .brand-logo:hover .brand-robot-icon {
+            transform: scale(1.12) rotate(-6deg);
+        }
+
+        .nav-spacer {
+            width: 42px;
+            height: 42px;
+        }
+
+        /* Tombol Hamburger Elastic Bounce */
+        .hamburger-btn {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 42px;
+            height: 42px;
+            background: rgba(243, 232, 255, 0.75);
+            border: 1px solid rgba(216, 180, 254, 0.6);
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 52;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        .hamburger-btn:hover {
+            background: rgba(233, 213, 255, 0.95);
+            transform: scale(1.05);
+        }
+
+        .hamburger-btn .bar {
+            width: 22px;
+            height: 2.5px;
+            background-color: #6b21a8;
+            border-radius: 2.5px;
+            margin: 2.5px 0;
+            transition: transform 0.5s cubic-bezier(0.68, -0.6, 0.32, 1.6), opacity 0.3s ease;
+        }
+
+        .hamburger-btn.is-active .bar:nth-child(1) {
+            transform: translateY(7.5px) rotate(45deg);
+        }
+
+        .hamburger-btn.is-active .bar:nth-child(2) {
+            opacity: 0;
+            transform: scale(0);
+        }
+
+        .hamburger-btn.is-active .bar:nth-child(3) {
+            transform: translateY(-7.5px) rotate(-45deg);
+        }
+
+        /* Menu Dropdown Popup */
+        .mobile-menu-overlay {
+            position: fixed;
+            top: 95px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.85);
+            width: 92%;
+            max-width: 620px;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(233, 213, 255, 0.85);
+            border-radius: 24px;
+            padding: 14px 16px;
+            box-shadow: 0 20px 50px rgba(126, 34, 206, 0.16);
+            opacity: 0;
+            visibility: hidden;
+            z-index: 45;
+            transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.68, -0.6, 0.32, 1.6), visibility 0.35s;
+        }
+
+        .mobile-menu-overlay.is-open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) scale(1);
+        }
+
+        .mobile-menu-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .mobile-menu-links button {
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: none;
+            color: #4b5563;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 12px 18px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mobile-menu-links button:hover, .mobile-menu-links button.active {
+            background: rgba(243, 232, 255, 0.9);
+            color: #7e22ce;
+            padding-left: 22px;
+        }
+
+        .mobile-menu-links button .menu-badge {
+            font-size: 0.72rem;
+            padding: 3px 8px;
+            border-radius: 99px;
+            background: rgba(168, 85, 247, 0.15);
+            color: #9333ea;
+            font-weight: 700;
+        }
+
+        /* Glass Panel Stage Container */
+        .stage-container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 95px 16px 40px 16px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.86);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(233, 213, 255, 0.9);
+            border-radius: 28px;
+            box-shadow: 0 25px 60px -15px rgba(126, 34, 206, 0.14), 0 10px 24px -5px rgba(0, 0, 0, 0.04);
+            width: 100%;
+            max-width: 720px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* External Floating Center Robot Container Outside Card */
+        .external-center-robot-stage {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-bottom: 16px;
+            z-index: 15;
+            position: relative;
+            width: 100%;
+            max-width: 620px;
+        }
+
+        .external-center-robot-stage.active {
+            display: flex;
+        }
+
+        /* Floating Bobbing Animation */
+        @keyframes gentleFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .float-anim {
+            animation: gentleFloat 4s ease-in-out infinite;
+        }
+
+        /* Face Element Tracking & Interpolation */
+        .faceFeaturesGroup {
+            transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .leftEyeShape, .rightEyeShape, .mouthPath {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Glassmorphic Controls Bar */
+        .glass-controls-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(233, 213, 255, 0.85);
+            box-shadow: 0 10px 30px -10px rgba(126, 34, 206, 0.12);
+        }
+
+        .btn-control {
+            background: rgba(243, 232, 255, 0.75);
+            border: 1px solid rgba(216, 180, 254, 0.6);
+            color: #6b21a8;
+            transition: all 0.2s ease;
+        }
+
+        .btn-control:hover {
+            background: #a855f7;
+            border-color: #c084fc;
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+
+        .btn-control.active {
+            background: #9333ea;
+            border-color: #d8b4fe;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(147, 51, 234, 0.35);
+        }
+
+        /* Particle Overlay Canvas */
+        .particle-canvas {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* Tab Panels Transition */
+        .tab-panel {
+            display: none;
+            opacity: 0;
+            transform: translateY(16px) scale(0.98);
+            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .tab-panel.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Glowing Robot Big Avatar */
+        .hero-robot-glow {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .hero-robot-glow::after {
+            content: '';
+            position: absolute;
+            inset: -12px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, rgba(147, 51, 234, 0) 70%);
+            animation: pulseGlow 3s infinite alternate ease-in-out;
+            z-index: -1;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(0.92); opacity: 0.5; }
+            100% { transform: scale(1.15); opacity: 0.95; }
+        }
+
+        /* Neon Pulse Border */
+        .neon-border-pulse {
+            position: relative;
+            border: 2px dashed rgba(168, 85, 247, 0.5);
+            animation: borderGlow 2.5s infinite ease-in-out;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { border-color: rgba(168, 85, 247, 0.4); box-shadow: 0 0 0px rgba(168, 85, 247, 0); }
+            50% { border-color: rgba(147, 51, 234, 0.9); box-shadow: 0 0 18px rgba(168, 85, 247, 0.25); }
+        }
+
+        /* Typing Dots Animation */
+        .typing-dot {
+            animation: typingBounce 1.4s infinite ease-in-out;
+        }
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-6px); opacity: 1; }
+        }
+
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(243, 232, 255, 0.3);
+            border-radius: 99px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(168, 85, 247, 0.35);
+            border-radius: 99px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(147, 51, 234, 0.6);
+        }
+
+        /* Notification Toast Container */
+        #toastContainer {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast-msg {
+            pointer-events: auto;
+            background: rgba(30, 27, 75, 0.92);
+            color: #ffffff;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            padding: 12px 18px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes toastIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigasi Floating Glassmorphism -->
+    <header class="top-navbar">
+        <!-- Hamburger Kiri -->
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Buka Menu">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </button>
+
+        <!-- Brand Guardian -->
+        <a href="#" class="brand-logo" onclick="switchTab('beranda'); return false;">
+            <svg class="brand-robot-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="5.5" y="3.5" width="6.5" height="9" rx="3.25" fill="#d8b4fe"/>
+                <rect x="24" y="3.5" width="6.5" height="9" rx="3.25" fill="#d8b4fe"/>
+                <rect x="3" y="7" width="30" height="26" rx="9" fill="#FFFFFF" stroke="#e9d5ff" stroke-width="1.5"/>
+                <rect x="6" y="10" width="24" height="20" rx="6" fill="#2e0d5a"/>
+                <rect class="eye-left" x="11" y="15" width="4.5" height="7.5" rx="2.25" fill="#c084fc"/>
+                <rect class="eye-right" x="20.5" y="15" width="4.5" height="7.5" rx="2.25" fill="#c084fc"/>
+                <path d="M 13.5 24.5 Q 18 27.5 22.5 24.5" stroke="#c084fc" stroke-width="2" stroke-linecap="round" fill="none"/>
+            </svg>
+            <span>Guardian</span>
+        </a>
+
+        <!-- Spacer Penyeimbang agar logo tetap di tengah -->
+        <div class="nav-spacer"></div>
+    </header>
+
+    <!-- Dropdown Menu Popup -->
+    <div class="mobile-menu-overlay" id="mobileMenu">
+        <ul class="mobile-menu-links">
+            <li>
+                <button id="nav-beranda" class="active" onclick="switchTab('beranda')">
+                    <span class="flex items-center gap-2.5">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                        Beranda
+                    </span>
+                    <span class="menu-badge">Utama</span>
+                </button>
+            </li>
+            <li>
+                <button id="nav-link" onclick="switchTab('link')">
+                    <span class="flex items-center gap-2.5">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                        Cek Link
+                    </span>
+                    <span class="menu-badge" id="linkCountBadge">URL Safety</span>
+                </button>
+            </li>
+            <li>
+                <button id="nav-file" onclick="switchTab('file')">
+                    <span class="flex items-center gap-2.5">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Cek File
+                    </span>
+                    <span class="menu-badge" id="fileCountBadge">Malware Safety</span>
+                </button>
+            </li>
+            <li>
+                <button id="nav-chatbot" onclick="switchTab('chatbot')">
+                    <span class="flex items-center gap-2.5">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                        Cek Pesan AI
+                    </span>
+                    <span class="menu-badge">Deteksi Pesan</span>
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Panggung Utama (Stage Glass Card) -->
+    <main class="stage-container">
+        
+        <!-- TOP ROBOT STAGE FOR CEK LINK -->
+        <div id="externalLinkRobotStage" class="external-center-robot-stage">
+            
+            <!-- Header Interface Control Sound -->
+            <div class="w-full flex justify-end items-center mb-1 px-2">
+                <button onclick="toggleAudio()" class="btn-control px-2.5 py-1 rounded-xl text-[11px] font-semibold flex items-center gap-1">
+                    <i data-lucide="volume-2" id="soundIconLink" class="w-3 h-3"></i>
+                    <span id="soundTextLink">Suara Aktif</span>
+                </button>
+            </div>
+
+            <!-- Avatar Wrapper with Particles & Interactive SVG -->
+            <div class="relative flex items-center justify-center p-1">
+                <canvas id="particleCanvasLink" class="particle-canvas"></canvas>
+
+                <div id="avatarContainerLink" class="float-anim cursor-pointer relative transition-transform duration-150 ease-out hover:scale-105" onclick="handleAvatarClick(event, 'link')">
+                    <svg id="linkRobotSvg" class="w-36 h-36 sm:w-44 sm:h-44" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- 1. TELINGA -->
+                        <path d="M 66 110 C 66 45, 136 45, 136 110 Z" fill="#b066fe" transform="rotate(-16 101 77)" />
+                        <path d="M 264 110 C 264 45, 334 45, 334 110 Z" fill="#b066fe" transform="rotate(16 299 77)" />
+                        <!-- 2. OUTER FRAME -->
+                        <rect x="50" y="80" width="300" height="270" rx="90" ry="90" fill="#e2d5f8" />
+                        <!-- 3. INNER FRAME -->
+                        <rect x="68" y="98" width="264" height="234" rx="72" ry="72" fill="#ffffff" />
+                        <!-- 4. SCREEN BACKGROUND -->
+                        <rect id="linkScreen" x="88" y="118" width="224" height="194" rx="55" ry="55" fill="#231340" />
+                        <!-- 5. FACE FEATURES GROUP -->
+                        <g id="linkFaceFeatures" class="faceFeaturesGroup">
+                            <g id="linkLeftEye" class="leftEyeShape"><rect x="135" y="175" width="32" height="60" rx="16" fill="#c38eff" /></g>
+                            <g id="linkRightEye" class="rightEyeShape"><rect x="233" y="175" width="32" height="60" rx="16" fill="#c38eff" /></g>
+                            <path id="linkSmile" class="mouthPath" d="M 155 260 Q 200 285 245 260" stroke="#c38eff" stroke-width="9" stroke-linecap="round" fill="none" />
+                        </g>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Status Info Title & Subtitle -->
+            <h4 id="linkRobotTitle" class="mt-1 text-xs font-bold text-purple-950 bg-white/90 px-3.5 py-0.5 rounded-full shadow-sm border border-purple-200">Belum Ada Link Yang Dipindai</h4>
+            <p id="linkRobotSub" class="text-[10px] text-purple-800 max-w-xs mt-0.5 font-medium bg-white/70 px-2.5 py-0.5 rounded-lg">Guardian siap menganalisis keamanan tautan Anda di atas.</p>
+
+        </div>
+
+        <!-- TOP ROBOT STAGE FOR CEK FILE -->
+        <div id="externalFileRobotStage" class="external-center-robot-stage">
+            
+            <!-- Header Interface Control Sound -->
+            <div class="w-full flex justify-end items-center mb-1 px-2">
+                <button onclick="toggleAudio()" class="btn-control px-2.5 py-1 rounded-xl text-[11px] font-semibold flex items-center gap-1">
+                    <i data-lucide="volume-2" id="soundIconFile" class="w-3 h-3"></i>
+                    <span id="soundTextFile">Suara Aktif</span>
+                </button>
+            </div>
+
+            <!-- Avatar Wrapper with Particles & Interactive SVG -->
+            <div class="relative flex items-center justify-center p-1">
+                <canvas id="particleCanvasFile" class="particle-canvas"></canvas>
+
+                <div id="avatarContainerFile" class="float-anim cursor-pointer relative transition-transform duration-150 ease-out hover:scale-105" onclick="handleAvatarClick(event, 'file')">
+                    <svg id="fileRobotSvg" class="w-36 h-36 sm:w-44 sm:h-44" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- 1. TELINGA -->
+                        <path d="M 66 110 C 66 45, 136 45, 136 110 Z" fill="#b066fe" transform="rotate(-16 101 77)" />
+                        <path d="M 264 110 C 264 45, 334 45, 334 110 Z" fill="#b066fe" transform="rotate(16 299 77)" />
+                        <!-- 2. OUTER FRAME -->
+                        <rect x="50" y="80" width="300" height="270" rx="90" ry="90" fill="#e2d5f8" />
+                        <!-- 3. INNER FRAME -->
+                        <rect x="68" y="98" width="264" height="234" rx="72" ry="72" fill="#ffffff" />
+                        <!-- 4. SCREEN BACKGROUND -->
+                        <rect id="fileScreen" x="88" y="118" width="224" height="194" rx="55" ry="55" fill="#231340" />
+                        <!-- 5. FACE FEATURES GROUP -->
+                        <g id="fileFaceFeatures" class="faceFeaturesGroup">
+                            <g id="fileLeftEye" class="leftEyeShape"><rect x="135" y="175" width="32" height="60" rx="16" fill="#c38eff" /></g>
+                            <g id="fileRightEye" class="rightEyeShape"><rect x="233" y="175" width="32" height="60" rx="16" fill="#c38eff" /></g>
+                            <path id="fileSmile" class="mouthPath" d="M 155 260 Q 200 285 245 260" stroke="#c38eff" stroke-width="9" stroke-linecap="round" fill="none" />
+                        </g>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Status Info Title & Subtitle -->
+            <h4 id="fileRobotTitle" class="mt-1 text-xs font-bold text-purple-950 bg-white/90 px-3.5 py-0.5 rounded-full shadow-sm border border-purple-200">Belum Ada File Yang Dipindai</h4>
+            <p id="fileRobotSub" class="text-[10px] text-purple-800 max-w-xs mt-0.5 font-medium bg-white/70 px-2.5 py-0.5 rounded-lg">Pilih atau unggah berkas untuk dipindai oleh Guardian.</p>
+
+        </div>
+
+        <div class="glass-card p-6 sm:p-8">
+            
+            <!-- PANEL 1: BERANDA -->
+            <section id="panel-beranda" class="tab-panel active">
+                <div class="flex flex-col items-center text-center space-y-6">
+                    
+                    <!-- Avatar Robot Interaktif -->
+                    <div class="hero-robot-glow my-2" id="heroRobotContainer" onclick="triggerRobotReaction()" title="Klik untuk tips keamanan!">
+                        <svg id="heroRobotSvg" class="w-28 h-28 sm:w-36 sm:h-36 transition-transform duration-300 hover:scale-105 active:scale-95" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="5.5" y="3.5" width="6.5" height="9" rx="3.25" fill="#c084fc"/>
+                            <rect x="24" y="3.5" width="6.5" height="9" rx="3.25" fill="#c084fc"/>
+                            <rect x="3" y="7" width="30" height="26" rx="9" fill="#FFFFFF" stroke="#e9d5ff" stroke-width="1.8"/>
+                            <rect x="6" y="10" width="24" height="20" rx="6" fill="#1e0542"/>
+                            <rect id="heroEyeLeft" x="11" y="14.5" width="4.5" height="8.5" rx="2.25" fill="#d8b4fe"/>
+                            <rect id="heroEyeRight" x="20.5" y="14.5" width="4.5" height="8.5" rx="2.25" fill="#d8b4fe"/>
+                            <path id="heroSmile" d="M 12.5 24 Q 18 28 23.5 24" stroke="#c084fc" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+                        </svg>
+                    </div>
+
+                    <!-- Header Text -->
+                    <div class="space-y-2 max-w-lg">
+                        <span class="inline-block px-3.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 tracking-wider uppercase border border-purple-200">Platform Keamanan Pintar</span>
+                        <h1 class="text-3xl sm:text-4xl font-extrabold text-purple-950 font-['Space_Grotesk'] leading-tight">Guardian Safety Checker</h1>
+                        <p class="text-gray-600 text-sm sm:text-base leading-relaxed">Periksa tautan web, berkas berkategori mencurigakan, dan analisis isi pesan secara mudah untuk memastikan keamanan digital Anda.</p>
+                    </div>
+
+                    <!-- Robot Status / Speech Bubble -->
+                    <div id="robotStatusSpeech" class="bg-purple-50/90 border border-purple-200 text-purple-900 px-4 py-3 rounded-2xl text-xs sm:text-sm font-medium shadow-sm transition-all duration-300 transform scale-95 opacity-0 max-w-md">
+                        🤖 "Halo! Saya Guardian. Pilih menu Cek Link, Cek File, atau Cek Pesan AI di bawah ini untuk memulai pengujian."
+                    </div>
+
+                    <!-- Shortcut Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 w-full pt-2">
+                        <div onclick="switchTab('link')" class="p-4 rounded-2xl bg-white/70 border border-purple-100 shadow-sm hover:shadow-md hover:border-purple-300 hover:-translate-y-1 transition-all cursor-pointer text-left group">
+                            <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                            </div>
+                            <h3 class="font-bold text-gray-900 text-sm">Cek Link</h3>
+                            <p class="text-xs text-gray-500 mt-1">Uji alamat URL untuk mendeteksi risiko phishing & domain mencurigakan.</p>
+                        </div>
+
+                        <div onclick="switchTab('file')" class="p-4 rounded-2xl bg-white/70 border border-purple-100 shadow-sm hover:shadow-md hover:border-purple-300 hover:-translate-y-1 transition-all cursor-pointer text-left group">
+                            <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            </div>
+                            <h3 class="font-bold text-gray-900 text-sm">Cek File</h3>
+                            <p class="text-xs text-gray-500 mt-1">Pindai berkas APK, executable, atau dokumen dari potensi bahaya.</p>
+                        </div>
+
+                        <div onclick="switchTab('chatbot')" class="p-4 rounded-2xl bg-white/70 border border-purple-100 shadow-sm hover:shadow-md hover:border-purple-300 hover:-translate-y-1 transition-all cursor-pointer text-left group">
+                            <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                            </div>
+                            <h3 class="font-bold text-gray-900 text-sm">Cek Pesan AI</h3>
+                            <p class="text-xs text-gray-500 mt-1">Evaluasi teks SMS, WhatsApp, atau penawaran yang mencurigakan.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- PANEL 2: CEK LINK -->
+            <section id="panel-link" class="tab-panel">
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between pb-3 border-b border-purple-100">
+                        <div>
+                            <h2 class="text-xl font-extrabold text-purple-950 font-['Space_Grotesk']">Pemindai Keamanan Link</h2>
+                            <p class="text-xs text-gray-500">Periksa apakah suatu tautan aman atau berpotensi bahaya & penipuan.</p>
+                        </div>
+                    </div>
+
+                    <!-- Input Form Cek Link -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-gray-700">Masukkan Alamat Web (URL):</label>
+                        <div class="flex gap-2">
+                            <input type="url" id="linkInput" placeholder="Contoh: https://promo-bca-kupon.xyz" class="flex-1 bg-white/80 border border-purple-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <button onclick="scanLinkSafety()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all active:scale-95 shadow-md flex items-center gap-1.5 shrink-0">
+                                🔍 Pindai Link
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sampel Cepat Tautan untuk Diuji -->
+                    <div class="flex flex-wrap gap-1.5 items-center pt-1">
+                        <span class="text-[11px] font-semibold text-gray-400">Coba sampel:</span>
+                        <button onclick="setSampleUrl('https://promo-hadiah-bca-official.online')" class="text-[11px] bg-red-50 text-red-600 hover:bg-red-100 font-medium px-2.5 py-1 rounded-lg border border-red-200">Link Palsu (.online)</button>
+                        <button onclick="setSampleUrl('https://undian-shopeepay-terbaru.xyz')" class="text-[11px] bg-red-50 text-red-600 hover:bg-red-100 font-medium px-2.5 py-1 rounded-lg border border-red-200">Link Phishing (.xyz)</button>
+                        <button onclick="setSampleUrl('https://www.tokopedia.com')" class="text-[11px] bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-medium px-2.5 py-1 rounded-lg border border-emerald-200">Web Resmi (Tokopedia)</button>
+                    </div>
+
+                    <!-- Daftar Hasil Cek Link -->
+                    <div class="space-y-2 pt-1">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400">Riwayat Analisis Link</h4>
+                        <div id="linkNodeList" class="space-y-2.5 max-h-44 overflow-y-auto custom-scroll pr-1">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PANEL 3: CEK FILE -->
+            <section id="panel-file" class="tab-panel">
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between pb-3 border-b border-purple-100">
+                        <div>
+                            <h2 class="text-xl font-extrabold text-purple-950 font-['Space_Grotesk']">Pemindai Keamanan File</h2>
+                            <p class="text-xs text-gray-500">Evaluasi ekstensi & potensi malware pada berkas aplikasi maupun dokumen.</p>
+                        </div>
+                    </div>
+
+                    <!-- Dropzone Area Upload / Pindai -->
+                    <div class="neon-border-pulse rounded-2xl p-5 text-center bg-purple-50/40 hover:bg-purple-50/70 transition-colors cursor-pointer group" onclick="triggerSimulatedUpload()">
+                        <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
+                        
+                        <div class="w-10 h-10 mx-auto rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </div>
+                        
+                        <h3 class="text-xs sm:text-sm font-bold text-purple-950">Pilih Berkas untuk Diperiksa</h3>
+                        <p class="text-[11px] text-gray-500 mt-0.5">Dukung dokumen PDF, PNG, DOCX, maupun berkas APK / Executable</p>
+                    </div>
+
+                    <!-- Tombol Sampel Berkas -->
+                    <div class="flex flex-wrap gap-1.5 justify-center">
+                        <button onclick="runFileScanSimulation('Surat_Undangan_Digital.apk')" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-semibold px-3 py-1.5 rounded-xl transition-colors">⚡ Tes APK Undangan</button>
+                        <button onclick="runFileScanSimulation('Lacak_Resi_Kurir.apk')" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-semibold px-3 py-1.5 rounded-xl transition-colors">⚡ Tes APK Resi</button>
+                        <button onclick="runFileScanSimulation('Dokumen_Tagihan.pdf.exe')" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-semibold px-3 py-1.5 rounded-xl transition-colors">⚡ Tes Double Ext (.exe)</button>
+                        <button onclick="runFileScanSimulation('Laporan_Kerja_2026.pdf')" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold px-3 py-1.5 rounded-xl transition-colors">⚡ Tes PDF Standar</button>
+                    </div>
+
+                    <!-- Progress Bar Pemindaian -->
+                    <div id="uploadProgressContainer" class="hidden space-y-2 bg-purple-50 p-4 rounded-xl border border-purple-200">
+                        <div class="flex justify-between text-xs font-semibold text-purple-900">
+                            <span id="uploadFileName">Menganalisis berkas...</span>
+                            <span id="uploadPercentText">0%</span>
+                        </div>
+                        <div class="w-full h-2.5 bg-purple-200 rounded-full overflow-hidden relative">
+                            <div id="uploadProgressBar" class="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <!-- List Hasil Analisis File -->
+                    <div class="space-y-2 pt-1">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400">Riwayat Pemindaian File</h4>
+                        <div id="fileList" class="space-y-2.5 max-h-40 overflow-y-auto custom-scroll pr-1">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PANEL 4: CEK PESAN AI -->
+            <section id="panel-chatbot" class="tab-panel">
+                <div class="flex flex-col h-[460px]">
+                    <!-- Chat Header -->
+                    <div class="flex items-center justify-between pb-3 border-b border-purple-100 mb-3">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full bg-purple-900 flex items-center justify-center border border-purple-400 shadow-md">
+                                <svg class="w-4 h-4 text-purple-300" viewBox="0 0 36 36" fill="none">
+                                    <rect x="3" y="7" width="30" height="26" rx="9" fill="#2e0d5a"/>
+                                    <rect x="11" y="15" width="4.5" height="7.5" rx="2.25" fill="#c084fc"/>
+                                    <rect x="20.5" y="15" width="4.5" height="7.5" rx="2.25" fill="#c084fc"/>
+                                    <path d="M 13.5 24.5 Q 18 27.5 22.5 24.5" stroke="#c084fc" stroke-width="2.5" fill="none"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-purple-950 text-xs sm:text-sm">Evaluasi Pesan AI</h3>
+                                <p class="text-[10px] text-purple-600 font-semibold">Cek Indikasi Risiko & Kejujuran Pesan</p>
+                            </div>
+                        </div>
+                        <button onclick="clearChatHistory()" class="text-xs text-gray-400 hover:text-purple-600 font-medium">Bersihkan Obrolan</button>
+                    </div>
+
+                    <!-- Chat Area -->
+                    <div id="chatMessages" class="flex-1 overflow-y-auto custom-scroll space-y-3 pr-1 text-xs sm:text-sm py-1">
+                        <div class="flex items-start gap-2.5 max-w-[90%]">
+                            <div class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 text-xs font-bold">🤖</div>
+                            <div class="p-3.5 rounded-2xl bg-purple-100/90 text-purple-950 rounded-tl-none font-medium leading-relaxed">
+                                Halo! Saya **Guardian AI Assitant**. Tempelkan isi teks SMS, pesan WhatsApp, atau informasi penawaran untuk saya analisis apakah aman atau berpotensi bahaya & penipuan.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Typing Indicator -->
+                    <div id="chatTyping" class="hidden flex items-center gap-2 text-xs text-purple-600 py-1.5 px-2">
+                        <span>Guardian menganalisis pesan</span>
+                        <div class="flex gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-purple-500 typing-dot"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-purple-500 typing-dot"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-purple-500 typing-dot"></span>
+                        </div>
+                    </div>
+
+                    <!-- Preset Samples -->
+                    <div class="flex gap-1.5 overflow-x-auto py-2 border-t border-purple-50 custom-scroll shrink-0">
+                        <button onclick="sendQuickPrompt('Selamat Anda menang hadiah Rp 50 Juta dari Bank BCA! Hubungi WhatsApp bit.ly/promo-bca-kupon')" class="shrink-0 text-[11px] bg-red-50 hover:bg-red-100 text-red-700 font-medium px-3 py-1 rounded-full border border-red-200 transition-colors"> Tes SMS Hadiah Bank</button>
+                        <button onclick="sendQuickPrompt('Halo bro, silakan unduh berkas foto undangan pernikahan kami Surat_Undangan.apk')" class="shrink-0 text-[11px] bg-red-50 hover:bg-red-100 text-red-700 font-medium px-3 py-1 rounded-full border border-red-200 transition-colors"> Tes WA File Undangan .APK</button>
+                        <button onclick="sendQuickPrompt('Halo Budi, besok rapat tim dijadwalkan jam 10 pagi ya. Terima kasih.')" class="shrink-0 text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium px-3 py-1 rounded-full border border-emerald-200 transition-colors"> Tes Pesan Rapat Normal</button>
+                    </div>
+
+                    <!-- Form Input Chat -->
+                    <form onsubmit="handleChatSubmit(event)" class="flex gap-2 pt-1 shrink-0">
+                        <input type="text" id="chatInput" placeholder="Ketik atau tempel isi pesan di sini..." class="flex-1 bg-white border border-purple-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all active:scale-95 shadow-md flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer"></div>
+
+    <!-- Canvas Background Ombak Ungu -->
+    <canvas id="waveCanvas"></canvas>
+
+    <script>
+        /* ===================================================
+           LOGIKA INTERAKTIF AVATAR ROBOT (SOUND, MOOD, PARTICLES, MOUSE TRACKING)
+           =================================================== */
+        let soundEnabled = true;
+        let audioCtx = null;
+        let particles = [];
+        let isBlinking = false;
+        let currentMoodMap = { link: 'happy', file: 'happy' };
+
+        function playRobotSound(freq = 520, type = 'sine', duration = 0.15) {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) {
+                    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtxClass) audioCtx = new AudioCtxClass();
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.25, audioCtx.currentTime + duration);
+
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            ['Link', 'File'].forEach(type => {
+                const soundIcon = document.getElementById(`soundIcon${type}`);
+                const soundText = document.getElementById(`soundText${type}`);
+                if (soundIcon && soundText) {
+                    if (soundEnabled) {
+                        soundIcon.setAttribute('data-lucide', 'volume-2');
+                        soundText.innerText = 'Suara Aktif';
+                    } else {
+                        soundIcon.setAttribute('data-lucide', 'volume-x');
+                        soundText.innerText = 'Suara Mute';
+                    }
+                }
+            });
+            if (soundEnabled) playRobotSound(650, 'sine', 0.1);
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function handlePointerMove(clientX, clientY) {
+            if (isBlinking) return;
+            ['link', 'file'].forEach(type => {
+                const container = document.getElementById(`avatarContainer${type.charAt(0).toUpperCase() + type.slice(1)}`);
+                const features = document.getElementById(`${type}FaceFeatures`);
+                if (!container || !features) return;
+
+                const rect = container.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                const deltaX = (clientX - centerX) / (window.innerWidth / 2);
+                const deltaY = (clientY - centerY) / (window.innerHeight / 2);
+
+                const moveX = Math.max(-14, Math.min(14, deltaX * 16));
+                const moveY = Math.max(-12, Math.min(12, deltaY * 14));
+
+                features.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        }
+
+        window.addEventListener('mousemove', (e) => handlePointerMove(e.clientX, e.clientY));
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches && e.touches[0]) handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+        });
+
+        function setMood(mood, type = 'link') {
+            currentMoodMap[type] = mood;
+
+            const screen = document.getElementById(`${type}Screen`);
+            if (screen && (mood === 'happy' || mood === 'surprised' || mood === 'blink' || mood === 'wink')) {
+                screen.setAttribute('fill', '#231340');
+            }
+
+            const eyeL = document.getElementById(`${type}LeftEye`);
+            const eyeR = document.getElementById(`${type}RightEye`);
+            const mouth = document.getElementById(`${type}Smile`);
+
+            if (!eyeL || !eyeR || !mouth) return;
+
+            if (mood === 'happy') {
+                eyeL.innerHTML = '<rect x="135" y="175" width="32" height="60" rx="16" fill="#c38eff" />';
+                eyeR.innerHTML = '<rect x="233" y="175" width="32" height="60" rx="16" fill="#c38eff" />';
+                mouth.setAttribute('d', 'M 155 260 Q 200 285 245 260');
+                mouth.setAttribute('stroke-width', '9');
+                mouth.setAttribute('stroke', '#c38eff');
+                mouth.setAttribute('fill', 'none');
+                playRobotSound(520, 'sine', 0.12);
+            } else if (mood === 'surprised') {
+                eyeL.innerHTML = '<circle cx="151" cy="205" r="22" fill="#c38eff" />';
+                eyeR.innerHTML = '<circle cx="249" cy="205" r="22" fill="#c38eff" />';
+                mouth.setAttribute('d', 'M 185 265 C 185 250, 215 250, 215 265 C 215 280, 185 280, 185 265 Z');
+                mouth.setAttribute('stroke-width', '5');
+                mouth.setAttribute('stroke', '#c38eff');
+                mouth.setAttribute('fill', 'none');
+                playRobotSound(780, 'triangle', 0.18);
+            } else if (mood === 'blink') {
+                eyeL.innerHTML = '<rect x="135" y="200" width="32" height="8" rx="4" fill="#c38eff" />';
+                eyeR.innerHTML = '<rect x="233" y="200" width="32" height="8" rx="4" fill="#c38eff" />';
+                mouth.setAttribute('d', 'M 165 260 Q 200 275 235 260');
+                mouth.setAttribute('stroke-width', '8');
+                mouth.setAttribute('stroke', '#c38eff');
+                mouth.setAttribute('fill', 'none');
+                playRobotSound(420, 'sine', 0.1);
+                setTimeout(() => { if (currentMoodMap[type] === 'blink') setMood('happy', type); }, 400);
+            } else if (mood === 'wink') {
+                eyeL.innerHTML = '<rect x="135" y="200" width="32" height="8" rx="4" fill="#c38eff" />';
+                eyeR.innerHTML = '<rect x="233" y="175" width="32" height="60" rx="16" fill="#c38eff" />';
+                mouth.setAttribute('d', 'M 158 260 Q 200 280 242 260');
+                mouth.setAttribute('stroke-width', '9');
+                mouth.setAttribute('stroke', '#c38eff');
+                mouth.setAttribute('fill', 'none');
+                playRobotSound(680, 'sine', 0.14);
+                setTimeout(() => { if (currentMoodMap[type] === 'wink') setMood('happy', type); }, 600);
+            }
+        }
+
+        class Particle {
+            constructor(x, y, canvas) {
+                this.canvas = canvas;
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 6 + 3;
+                this.speedX = (Math.random() - 0.5) * 7;
+                this.speedY = (Math.random() - 0.5) * 7;
+                this.colors = ['#b066fe', '#c38eff', '#e2d5f8', '#ffffff'];
+                this.color = this.colors[Math.floor(Math.random() * this.colors.length)];
+                this.alpha = 1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.alpha -= 0.035;
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function handleAvatarClick(e, type) {
+            const canvas = document.getElementById(type === 'link' ? 'particleCanvasLink' : 'particleCanvasFile');
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            for (let i = 0; i < 20; i++) {
+                particles.push(new Particle(clickX, clickY, canvas));
+            }
+
+            playRobotSound(700, 'sine', 0.1);
+            setMood('blink', type);
+        }
+
+        function renderParticles() {
+            ['Link', 'File'].forEach(t => {
+                const canvas = document.getElementById(`particleCanvas${t}`);
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    if (canvas.width !== canvas.offsetWidth || canvas.height !== canvas.offsetHeight) {
+                        canvas.width = canvas.offsetWidth || 300;
+                        canvas.height = canvas.offsetHeight || 300;
+                    }
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    particles.forEach((p, index) => {
+                        if (p.canvas === canvas) {
+                            p.update();
+                            p.draw(ctx);
+                            if (p.alpha <= 0) particles.splice(index, 1);
+                        }
+                    });
+                }
+            });
+            requestAnimationFrame(renderParticles);
+        }
+
+        // Auto Blink Loop
+        setInterval(() => {
+            ['link', 'file'].forEach(type => {
+                if (currentMoodMap[type] === 'happy' && Math.random() > 0.4) {
+                    const eyeL = document.getElementById(`${type}LeftEye`);
+                    const eyeR = document.getElementById(`${type}RightEye`);
+                    if (eyeL && eyeR) {
+                        isBlinking = true;
+                        const oldL = eyeL.innerHTML;
+                        const oldR = eyeR.innerHTML;
+                        eyeL.innerHTML = '<rect x="135" y="200" width="32" height="8" rx="4" fill="#c38eff" />';
+                        eyeR.innerHTML = '<rect x="233" y="200" width="32" height="8" rx="4" fill="#c38eff" />';
+                        setTimeout(() => {
+                            eyeL.innerHTML = oldL;
+                            eyeR.innerHTML = oldR;
+                            isBlinking = false;
+                        }, 160);
+                    }
+                }
+            });
+        }, 3800);
+
+        /* ===================================================
+           1. LOGIKA MENU TOGGLE & ELASTIC BOUNCE
+           =================================================== */
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        hamburgerBtn.addEventListener('click', () => {
+            hamburgerBtn.classList.toggle('is-active');
+            mobileMenu.classList.toggle('is-open');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!hamburgerBtn.contains(e.target) && !mobileMenu.contains(e.target)) {
+                hamburgerBtn.classList.remove('is-active');
+                mobileMenu.classList.remove('is-open');
+            }
+        });
+
+        /* ===================================================
+           2. NAVIGATION & TAB SWITCHING
+           =================================================== */
+        function switchTab(tabId) {
+            const navButtons = document.querySelectorAll('.mobile-menu-links button');
+            navButtons.forEach(btn => btn.classList.remove('active'));
+            
+            const currentBtn = document.getElementById(`nav-${tabId}`);
+            if (currentBtn) currentBtn.classList.add('active');
+
+            hamburgerBtn.classList.remove('is-active');
+            mobileMenu.classList.remove('is-open');
+
+            const panels = document.querySelectorAll('.tab-panel');
+            panels.forEach(panel => panel.classList.remove('active'));
+
+            const targetPanel = document.getElementById(`panel-${tabId}`);
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+            }
+
+            // Handle external robot stages visibility
+            const linkStage = document.getElementById('externalLinkRobotStage');
+            const fileStage = document.getElementById('externalFileRobotStage');
+
+            linkStage.classList.remove('active');
+            fileStage.classList.remove('active');
+
+            if (tabId === 'link') {
+                linkStage.classList.add('active');
+                resetRobotState('link');
+            } else if (tabId === 'file') {
+                fileStage.classList.add('active');
+                resetRobotState('file');
+            }
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        /* ===================================================
+           3. INTERAKSI ROBOT AVATAR BERANDA
+           =================================================== */
+        const robotTips = [
+            '🛡️ "Waspadai tautan yang menggunakan nama bank namun berekstensi asing seperti .xyz atau .online!"',
+            '⚠️ "Jangan pernah mengunduh atau menginstal file berakhiran .APK yang dikirim via obrolan WhatsApp!"',
+            '🔒 "Bank atau institusi resmi tidak akan pernah meminta kode OTP atau password pribadi Anda."',
+            '🔍 "Gunakan fitur Cek Link dan Cek File di Guardian untuk memverifikasi keamanan berkas Anda."'
+        ];
+        let robotTipIndex = 0;
+
+        function triggerRobotReaction() {
+            const svg = document.getElementById('heroRobotSvg');
+            const speech = document.getElementById('robotStatusSpeech');
+            const eyeL = document.getElementById('heroEyeLeft');
+            const eyeR = document.getElementById('heroEyeRight');
+
+            if (svg) {
+                svg.classList.add('scale-125', 'rotate-6');
+                setTimeout(() => svg.classList.remove('scale-125', 'rotate-6'), 300);
+            }
+
+            if (eyeL && eyeR) {
+                eyeL.setAttribute('height', '1.5');
+                eyeR.setAttribute('height', '1.5');
+                setTimeout(() => {
+                    eyeL.setAttribute('height', '8.5');
+                    eyeR.setAttribute('height', '8.5');
+                }, 200);
+            }
+
+            if (speech) {
+                robotTipIndex = (robotTipIndex + 1) % robotTips.length;
+                speech.innerText = robotTips[robotTipIndex];
+                speech.classList.remove('opacity-0', 'scale-95');
+                speech.classList.add('opacity-100', 'scale-100');
+            }
+        }
+
+        /* ===================================================
+           ROBOT CENTER CONTROLLER & SCANNING STATES
+           =================================================== */
+        function setRobotState(type, state, detailText) {
+            const screen = document.getElementById(`${type}Screen`);
+            const eyeL = document.getElementById(`${type}LeftEye`);
+            const eyeR = document.getElementById(`${type}RightEye`);
+            const mouth = document.getElementById(`${type}Smile`);
+            const title = document.getElementById(`${type}RobotTitle`);
+            const sub = document.getElementById(`${type}RobotSub`);
+
+            if (state === 'scanning') {
+                if (screen) screen.setAttribute('fill', '#3b0764');
+                setMood('surprised', type);
+                playRobotSound(600, 'triangle', 0.25);
+                if (title) {
+                    title.innerText = 'Guardian Sedang Memindai...';
+                    title.className = 'mt-1 text-xs sm:text-sm font-bold text-purple-700 bg-white/90 px-4 py-1 rounded-full shadow-sm border border-purple-200 animate-pulse';
+                }
+                if (sub) sub.innerText = detailText || 'Menganalisis struktur data dan potensi ancaman...';
+            } 
+            else if (state === 'safe') {
+                if (screen) screen.setAttribute('fill', '#064e3b');
+                currentMoodMap[type] = 'safe';
+                
+                // EKSPRESI OTOMATIS TIDAK BERBAHAYA: >_<
+                if (eyeL) eyeL.innerHTML = '<path d="M 130 185 L 165 205 L 130 225" stroke="#34d399" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" />';
+                if (eyeR) eyeR.innerHTML = '<path d="M 270 185 L 235 205 L 270 225" stroke="#34d399" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none" />';
+                if (mouth) {
+                    mouth.setAttribute('d', 'M 155 255 Q 200 285 245 255');
+                    mouth.setAttribute('stroke', '#34d399');
+                    mouth.setAttribute('stroke-width', '9');
+                }
+                
+                playRobotSound(800, 'sine', 0.2);
+                if (title) {
+                    title.innerText = '✅ Hasil: Terdeteksi AMAN (>_<)';
+                    title.className = 'mt-1 text-xs sm:text-sm font-extrabold text-emerald-700 bg-emerald-50 px-4 py-1 rounded-full shadow-sm border border-emerald-200';
+                }
+                if (sub) sub.innerText = detailText || 'Tidak ditemukan indikasi bahaya / ancaman keamanan.';
+            } 
+            else if (state === 'danger') {
+                if (screen) screen.setAttribute('fill', '#450a0a');
+                currentMoodMap[type] = 'danger';
+                
+                // EKSPRESI OTOMATIS BERBAHAYA: X_X
+                if (eyeL) eyeL.innerHTML = '<path d="M 135 185 L 167 225 M 167 185 L 135 225" stroke="#f87171" stroke-width="12" stroke-linecap="round" fill="none" />';
+                if (eyeR) eyeR.innerHTML = '<path d="M 233 185 L 265 225 M 265 185 L 233 225" stroke="#f87171" stroke-width="12" stroke-linecap="round" fill="none" />';
+                if (mouth) {
+                    mouth.setAttribute('d', 'M 155 275 Q 200 245 245 275');
+                    mouth.setAttribute('stroke', '#f87171');
+                    mouth.setAttribute('stroke-width', '9');
+                }
+                
+                playRobotSound(300, 'sawtooth', 0.3);
+                if (title) {
+                    title.innerText = '🚨 Hasil: BERBAHAYA / RISIKO TINGGI (X_X)';
+                    title.className = 'mt-1 text-xs sm:text-sm font-extrabold text-red-700 bg-red-50 px-4 py-1 rounded-full shadow-sm border border-red-200';
+                }
+                if (sub) sub.innerText = detailText || 'Terdeteksi modus penipuan, malware, atau TLD berisiko!';
+            }
+        }
+
+        function resetRobotState(type) {
+            const list = document.getElementById(`${type}NodeList`) || document.getElementById('fileList');
+            if (!list || list.children.length === 0) {
+                const screen = document.getElementById(`${type}Screen`);
+                const title = document.getElementById(`${type}RobotTitle`);
+                const sub = document.getElementById(`${type}RobotSub`);
+
+                if (screen) screen.setAttribute('fill', '#231340');
+                setMood('happy', type);
+
+                if (title) {
+                    title.innerText = type === 'link' ? 'Belum Ada Link Yang Dipindai' : 'Belum Ada File Yang Dipindai';
+                    title.className = 'mt-1 text-xs sm:text-sm font-bold text-purple-950 bg-white/90 px-4 py-1 rounded-full shadow-sm border border-purple-200';
+                }
+                if (sub) {
+                    sub.innerText = type === 'link' ? 'Guardian siap menganalisis keamanan tautan Anda di atas.' : 'Pilih atau unggah berkas untuk dipindai oleh Guardian.';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderParticles();
+            if (window.lucide) lucide.createIcons();
+        });
+
+        /* ===================================================
+           4. CEK LINK DETECTOR
+           =================================================== */
+        function setSampleUrl(url) {
+            document.getElementById('linkInput').value = url;
+            scanLinkSafety();
+        }
+
+        function scanLinkSafety() {
+            const input = document.getElementById('linkInput');
+            const rawUrl = input.value.trim();
+            if (!rawUrl) {
+                showToast('⚠️ Silakan masukkan alamat URL terlebih dahulu');
+                return;
+            }
+
+            setRobotState('link', 'scanning', `Memindai URL: ${rawUrl}`);
+
+            setTimeout(() => {
+                const list = document.getElementById('linkNodeList');
+                const item = document.createElement('div');
+                const lower = rawUrl.toLowerCase();
+
+                const suspiciousTlds = ['.xyz', '.top', '.online', '.site', '.tk', '.cc', '.fun', '.zip', '.click'];
+                const phishingKeywords = ['promo', 'hadiah', 'undian', 'login', 'verifikasi', 'klaim', 'bonus', 'official-bank', 'shopeepay'];
+                const safeWhitelist = ['bca.co.id', 'mandiri.co.id', 'bri.co.id', 'bni.co.id', 'tokopedia.com', 'shopee.co.id', 'google.com', 'gov.id', 'go.id'];
+
+                let isTrusted = safeWhitelist.some(domain => lower.includes(domain));
+                let isSuspicious = suspiciousTlds.some(tld => lower.includes(tld)) || 
+                                   phishingKeywords.some(kw => lower.includes(kw));
+
+                if (!isTrusted && isSuspicious) {
+                    setRobotState('link', 'danger', `Tautan ${rawUrl} memiliki indikasi kuat Phishing!`);
+                    item.className = 'p-3.5 rounded-xl bg-white/70 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs animate-bounce';
+                    item.innerHTML = `
+                        <div class="flex items-start gap-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse mt-1 shrink-0"></span>
+                            <div>
+                                <p class="font-bold text-gray-900 break-all">${rawUrl}</p>
+                                <p class="text-red-700 font-medium text-[11px] mt-0.5">Indikasi Phishing • TLD Berisiko / Pola Kata Kunci Mencurigakan</p>
+                            </div>
+                        </div>
+                        <span class="text-red-700 font-bold bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg self-start sm:self-center shrink-0">BERBAHAYA</span>
+                    `;
+                    showToast('🚨 Hasil: Tautan terdeteksi BERBAHAYA / Berpotensi Phishing!');
+                } else {
+                    setRobotState('link', 'safe', `Tautan ${rawUrl} struktur domain & HTTPS aman.`);
+                    item.className = 'p-3.5 rounded-xl bg-white/70 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs animate-bounce';
+                    item.innerHTML = `
+                        <div class="flex items-start gap-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mt-1 shrink-0"></span>
+                            <div>
+                                <p class="font-bold text-gray-900 break-all">${rawUrl}</p>
+                                <p class="text-emerald-700 font-medium text-[11px] mt-0.5">Tautan Berstruktur Normal • Tidak Ditemukan Indikasi Phishing</p>
+                            </div>
+                        </div>
+                        <span class="text-emerald-700 font-bold bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg self-start sm:self-center shrink-0">AMAN</span>
+                    `;
+                    showToast('✅ Hasil: Tautan dinyatakan AMAN');
+                }
+
+                list.prepend(item);
+                input.value = '';
+                setTimeout(() => item.classList.remove('animate-bounce'), 1000);
+            }, 600);
+        }
+
+        /* ===================================================
+           5. CEK FILE DETECTOR
+           =================================================== */
+        function triggerSimulatedUpload() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            const fileName = file ? file.name : "Berkas_Dokumen.pdf";
+            runFileScanSimulation(fileName);
+        }
+
+        function runFileScanSimulation(fileName) {
+            const container = document.getElementById('uploadProgressContainer');
+            const nameLabel = document.getElementById('uploadFileName');
+            const percentLabel = document.getElementById('uploadPercentText');
+            const bar = document.getElementById('uploadProgressBar');
+
+            container.classList.remove('hidden');
+            nameLabel.innerText = `Memindai: ${fileName}`;
+            bar.style.width = '0%';
+            percentLabel.innerText = '0%';
+
+            setRobotState('file', 'scanning', `Memindai berkas: ${fileName}`);
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 25) + 15;
+                if (progress > 100) progress = 100;
+
+                bar.style.width = `${progress}%`;
+                percentLabel.innerText = `${progress}%`;
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        addFileScanToList(fileName);
+                        container.classList.add('hidden');
+                    }, 350);
+                }
+            }, 140);
+        }
+
+        function addFileScanToList(name) {
+            const list = document.getElementById('fileList');
+            const item = document.createElement('div');
+            const lower = name.toLowerCase();
+
+            const dangerousExts = ['.apk', '.exe', '.scr', '.vbs', '.bat', '.cmd', '.ps1'];
+            const isDoubleExt = lower.includes('.pdf.exe') || lower.includes('.docx.apk') || lower.includes('.jpg.apk');
+            const isDangerous = dangerousExts.some(ext => lower.endsWith(ext)) || isDoubleExt;
+
+            if (isDangerous) {
+                setRobotState('file', 'danger', `Berkas ${name} terindikasi APK / Malware executable!`);
+                item.className = 'p-3.5 rounded-xl bg-white/70 border border-red-200 flex items-center justify-between text-xs animate-bounce';
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-red-100 text-red-700 rounded-lg shrink-0">⚠️</div>
+                        <div>
+                            <p class="font-bold text-gray-900">${name}</p>
+                            <p class="text-red-600 font-medium text-[11px]">Format Executable / APK • Potensi Malware & Akses Izin Berbahaya</p>
+                        </div>
+                    </div>
+                    <span class="text-red-700 font-bold bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg shrink-0">BERBAHAYA</span>
+                `;
+                showToast(`🚨 Peringatan: Berkas ${name} BERBAHAYA / Risiko Malware!`);
+            } else {
+                setRobotState('file', 'safe', `Berkas ${name} merupakan dokumen/gambar standar yang aman.`);
+                item.className = 'p-3.5 rounded-xl bg-white/70 border border-purple-100 flex items-center justify-between text-xs animate-bounce';
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-purple-100 text-purple-700 rounded-lg shrink-0">📄</div>
+                        <div>
+                            <p class="font-bold text-gray-800">${name}</p>
+                            <p class="text-gray-400 text-[11px]">Format Dokumen / Gambar Standar • Berkas Berstruktur Wajar</p>
+                        </div>
+                    </div>
+                    <span class="text-emerald-700 font-bold bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg shrink-0">AMAN</span>
+                `;
+                showToast(`✅ Berkas ${name} dinyatakan AMAN`);
+            }
+
+            list.prepend(item);
+            setTimeout(() => item.classList.remove('animate-bounce'), 1000);
+        }
+
+        /* ===================================================
+           6. CEK PESAN AI (EVALUASI FRAUD & SAFETY)
+           =================================================== */
+        function sendQuickPrompt(text) {
+            document.getElementById('chatInput').value = text;
+            handleChatSubmit(new Event('submit'));
+        }
+
+        function handleChatSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            appendChatMessage(message, 'user');
+            input.value = '';
+
+            const typing = document.getElementById('chatTyping');
+            typing.classList.remove('hidden');
+
+            setTimeout(() => {
+                typing.classList.add('hidden');
+                const analysis = evaluateMessageSafety(message);
+                appendChatMessage(analysis, 'bot');
+            }, 750);
+        }
+
+        function evaluateMessageSafety(text) {
+            const lower = text.toLowerCase();
+            
+            const dangerMarkers = [
+                'menang', 'hadiah', 'undian', 'otp', 'password', 'pin', 'bca', 'shopee',
+                'telegram', 'komisi', 'deposit', 'transfer', 'apk', 'undangan', 'resi',
+                'klik link', 'bit.ly', 'pajak', 'tilang', 'rekening'
+            ];
+
+            const matches = dangerMarkers.filter(m => lower.includes(m));
+
+            if (matches.length >= 2 || lower.includes('.apk') || lower.includes('menang') || lower.includes('otp') || lower.includes('deposit')) {
+                return `🚨 **[BERBAHAYA / RISIKO PENIPUAN TINGGI]**\n\n**Hasil Analisis:** Pesan ini terindikasi memiliki pola bahaya / modus penipuan.\n• **Indikator Terdeteksi:** ${matches.join(', ')}\n\n**Rekomendasi Tindakan:**\n1. Jangan klik tautan atau mengunduh berkas yang dilampirkan.\n2. Jangan pernah memberikan kode OTP, PIN, atau mentransfer uang.\n3. Abaikan & laporkan kontak tersebut.`;
+            } else {
+                return `✅ **[AMAN / TIDAK BERBAHAYA]**\n\n**Hasil Analisis:** Pesan ini tampaknya merupakan komunikasi biasa dan tidak mengandung indikator ancaman utama.\n\n**Catatan:** Tetap utamakan kehati-hatian dalam membagikan informasi pribadi atau data sensitif.`;
+            }
+        }
+
+        function appendChatMessage(text, sender) {
+            const area = document.getElementById('chatMessages');
+            const wrap = document.createElement('div');
+
+            if (sender === 'user') {
+                wrap.className = 'flex items-start justify-end gap-2.5 ml-auto max-w-[88%]';
+                wrap.innerHTML = `
+                    <div class="p-3.5 rounded-2xl bg-purple-700 text-white rounded-tr-none font-medium leading-relaxed shadow-sm">
+                        ${text.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+            } else {
+                const isDangerous = text.includes('[BERBAHAYA');
+                const bgClass = isDangerous ? 'bg-red-50 border border-red-200 text-red-950' : 'bg-purple-100/90 text-purple-950';
+                
+                wrap.className = 'flex items-start gap-2.5 max-w-[88%]';
+                wrap.innerHTML = `
+                    <div class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 text-xs font-bold">🤖</div>
+                    <div class="p-3.5 rounded-2xl ${bgClass} rounded-tl-none font-medium leading-relaxed">
+                        ${text.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+            }
+
+            area.appendChild(wrap);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        function clearChatHistory() {
+            const area = document.getElementById('chatMessages');
+            area.innerHTML = `
+                <div class="flex items-start gap-2.5 max-w-[90%]">
+                    <div class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 text-xs font-bold">🤖</div>
+                    <div class="p-3.5 rounded-2xl bg-purple-100/90 text-purple-950 rounded-tl-none font-medium leading-relaxed">
+                        Riwayat obrolan dibersihkan. Tempelkan isi pesan lain yang ingin Anda evaluasi.
+                    </div>
+                </div>
+            `;
+        }
+
+        /* ===================================================
+           7. TOAST NOTIFICATION UTILITY
+           =================================================== */
+        function showToast(msg) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.innerText = msg;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        /* ===================================================
+           8. ANIMASI CANVAS OMBAK UNGU
+           =================================================== */
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = 0;
+        let height = 0;
+        let step = 0;
+
+        const speed = 0.003;
+
+        const waves = [
+            {
+                topColor: 'rgba(147, 51, 234, 0)',
+                midColor: 'rgba(147, 51, 234, 0.25)',
+                bottomColor: 'rgba(109, 40, 217, 0.60)',
+                length: 0.005,
+                amplitude: 65,
+                speedOffset: 0.9,
+                phase: 2.0,
+                yRatio: 0.62
+            },
+            {
+                topColor: 'rgba(126, 34, 206, 0)',
+                midColor: 'rgba(126, 34, 206, 0.45)',
+                bottomColor: 'rgba(88, 28, 135, 0.90)',
+                length: 0.007,
+                amplitude: 50,
+                speedOffset: 1.2,
+                phase: 0.5,
+                yRatio: 0.70
+            }
+        ];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        function drawWave(wave) {
+            const baseY = height * wave.yRatio;
+
+            const gradient = ctx.createLinearGradient(0, baseY - wave.amplitude - 20, 0, height);
+            gradient.addColorStop(0, wave.topColor);
+            gradient.addColorStop(0.35, wave.midColor);
+            gradient.addColorStop(1, wave.bottomColor);
+
+            ctx.beginPath();
+            ctx.moveTo(0, height);
+            ctx.lineTo(0, baseY);
+
+            for (let x = 0; x <= width; x += 2) {
+                const y = baseY + 
+                    Math.sin(x * wave.length + step * wave.speedOffset + wave.phase) * wave.amplitude +
+                    Math.sin(x * wave.length * 0.4 + step * 0.6) * (wave.amplitude * 0.35);
+
+                ctx.lineTo(x, y);
+            }
+
+            ctx.lineTo(width, height);
+            ctx.closePath();
+
+            ctx.fillStyle = gradient;
+            ctx.fill();
+        }
+
+        function animate() {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+
+            step += speed;
+
+            for (let i = 0; i < waves.length; i++) {
+                drawWave(waves[i]);
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        window.onload = function() {
+            animate();
+        };
+    </script>
+</body>
+</html>

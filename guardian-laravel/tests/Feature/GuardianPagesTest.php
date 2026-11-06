@@ -49,7 +49,7 @@ class GuardianPagesTest extends TestCase
             ->assertSee(route('files'), false)
             ->assertSee(route('links'), false)
             ->assertSee('VirusTotal', false)
-            ->assertSee('OPSWAT', false);
+            ->assertSee('VirusTotal', false);
     }
 
     public function test_link_scan_requires_explicit_consent(): void
@@ -221,56 +221,54 @@ class GuardianPagesTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_file_upload_is_sent_to_opswat_with_sample_sharing_disabled(): void
+    public function test_file_upload_is_sent_to_virustotal_after_explicit_consent(): void
     {
-        config(['guardian.metadefender.api_key' => 'opswat-test-key']);
-        $uploadedBytes = null;
+        config(['guardian.virustotal.api_key' => 'virustotal-test-key']);
+        $multipartBody = null;
         Http::fake([
-            'api.metadefender.com/v4/file' => function (ClientRequest $request) use (&$uploadedBytes) {
-                $uploadedBytes = $request->body();
+            'www.virustotal.com/api/v3/files' => function (ClientRequest $request) use (&$multipartBody) {
+                $multipartBody = $request->body();
 
                 return Http::response([
-                    'data_id' => 'scan-id-123',
-                    'scan_results' => ['progress_percentage' => 0],
+                    'data' => ['id' => 'analysis-id-123'],
                 ]);
             },
         ]);
 
         $this->postJson('/api/files', [
             'file' => UploadedFile::fake()->createWithContent('sample.txt', 'file contents'),
-            'share_file_with_opswat' => true,
+            'share_file_with_virustotal' => true,
         ])->assertOk()
             ->assertJsonPath('status', 'pending')
-            ->assertJsonMissingPath('scan_id');
+            ->assertJsonMissingPath('analysis_id');
 
         Http::assertSent(fn (ClientRequest $request): bool =>
             $request->method() === 'POST'
-            && str_ends_with($request->url(), '/v4/file')
-            && $request->hasHeader('apikey', 'opswat-test-key')
-            && $request->hasHeader('samplesharing', '0')
+            && str_ends_with($request->url(), '/api/v3/files')
+            && $request->hasHeader('x-apikey', 'virustotal-test-key')
+            && str_contains($request->header('Content-Type')[0] ?? '', 'multipart/form-data')
         );
-        $this->assertSame('file contents', $uploadedBytes);
+        $this->assertStringContainsString('name="file"; filename="sample.txt"', $multipartBody);
+        $this->assertStringContainsString('file contents', $multipartBody);
     }
 
     public function test_file_scan_report_refresh_is_bound_to_the_session(): void
     {
-        config(['guardian.metadefender.api_key' => 'opswat-test-key']);
+        config(['guardian.virustotal.api_key' => 'virustotal-test-key']);
         Http::fakeSequence()
             ->push([
-                'data_id' => 'scan-id-456',
-                'scan_results' => ['progress_percentage' => 10],
+                'data' => ['id' => 'analysis-id-456:1475048277=='],
             ])
             ->push([
-                'scan_results' => [
-                    'progress_percentage' => 100,
-                    'total_detected_avs' => 2,
-                    'total_avs' => 30,
-                ],
+                'data' => ['attributes' => [
+                    'status' => 'completed',
+                    'stats' => ['malicious' => 2, 'suspicious' => 0, 'harmless' => 20, 'undetected' => 8],
+                ]],
             ]);
 
         $this->postJson('/api/files', [
             'file' => UploadedFile::fake()->createWithContent('sample.txt', 'file contents'),
-            'share_file_with_opswat' => true,
+            'share_file_with_virustotal' => true,
         ])->assertJsonPath('status', 'pending');
 
         $this->postJson('/api/files/analysis')
@@ -281,18 +279,18 @@ class GuardianPagesTest extends TestCase
 
         Http::assertSent(fn (ClientRequest $request): bool =>
             $request->method() === 'GET'
-            && str_ends_with($request->url(), '/v4/file/scan-id-456')
+            && str_ends_with($request->url(), '/api/v3/analyses/analysis-id-456%3A1475048277%3D%3D')
         );
     }
 
     public function test_file_scan_rejects_oversized_files_and_unbound_report_ids(): void
     {
-        config(['guardian.metadefender.api_key' => 'opswat-test-key']);
+        config(['guardian.virustotal.api_key' => 'virustotal-test-key']);
         Http::fake();
 
         $this->postJson('/api/files', [
             'file' => UploadedFile::fake()->create('too-large.bin', 10241),
-            'share_file_with_opswat' => true,
+            'share_file_with_virustotal' => true,
         ])->assertUnprocessable();
 
         $this->postJson('/api/files/analysis')->assertNotFound();

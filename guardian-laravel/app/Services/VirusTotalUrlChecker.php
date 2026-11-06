@@ -129,6 +129,60 @@ class VirusTotalUrlChecker
         }
     }
 
+    public function getUrlReport(string $urlId): array
+    {
+        $apiKey = config('guardian.virustotal.api_key');
+        if (! \is_string($apiKey) || $apiKey === '') {
+            return ['error' => 'VirusTotal belum dikonfigurasi pada server.'];
+        }
+        if ($this->rateLimitReached()) {
+            return ['error' => 'Batas permintaan VirusTotal tercapai. Coba lagi nanti.'];
+        }
+
+        try {
+            $response = Http::withHeaders(['x-apikey' => $apiKey])
+                ->acceptJson()->connectTimeout(3)->timeout(8)
+                ->get(self::API_URL.'/urls/'.rawurlencode($urlId));
+            if (! $response->successful()) {
+                Log::warning('VirusTotal URL report page request failed.', ['status' => $response->status()]);
+                return ['error' => $response->status() === 404
+                    ? 'VirusTotal belum memiliki laporan untuk tautan ini.'
+                    : 'Laporan VirusTotal tidak dapat dimuat. Coba lagi nanti.'];
+            }
+
+            $attributes = data_get($response->json(), 'data.attributes');
+            if (! \is_array($attributes)) {
+                return ['error' => 'VirusTotal mengembalikan laporan dengan format yang tidak dikenali.'];
+            }
+            $results = is_array($attributes['last_analysis_results'] ?? null) ? $attributes['last_analysis_results'] : [];
+            $vendors = [];
+            foreach ($results as $vendor) {
+                if (! is_array($vendor)) continue;
+                $vendors[] = [
+                    'name' => (string) ($vendor['engine_name'] ?? 'Vendor keamanan'),
+                    'category' => (string) ($vendor['category'] ?? 'undetected'),
+                    'result' => (string) ($vendor['result'] ?? 'Tidak ada deteksi'),
+                ];
+            }
+            usort($vendors, static fn (array $a, array $b): int => strcmp($a['category'], $b['category']));
+            $stats = $attributes['last_analysis_stats'] ?? [];
+            $stats = is_array($stats) ? array_intersect_key($stats, array_flip(['malicious', 'suspicious', 'harmless', 'undetected', 'timeout', 'failure', 'type-unsupported', 'confirmed-timeout'])) : [];
+
+            return [
+                'url' => (string) ($attributes['url'] ?? ''),
+                'stats' => $stats,
+                'vendors' => $vendors,
+                'categories' => is_array($attributes['categories'] ?? null) ? $attributes['categories'] : [],
+                'reputation' => is_numeric($attributes['reputation'] ?? null) ? (int) $attributes['reputation'] : null,
+                'last_analysis_date' => is_numeric($attributes['last_analysis_date'] ?? null) ? (int) $attributes['last_analysis_date'] : null,
+                'verdict' => ((int) ($stats['malicious'] ?? 0) > 0) ? 'malicious' : (((int) ($stats['suspicious'] ?? 0) > 0) ? 'suspicious' : 'no_detections'),
+            ];
+        } catch (ConnectionException $exception) {
+            Log::warning('VirusTotal URL report page could not connect.', ['message' => $exception->getMessage()]);
+            return ['error' => 'VirusTotal tidak dapat dihubungi. Coba lagi nanti.'];
+        }
+    }
+
     private function submitForAnalysis($client, string $url, string $urlId): array
     {
         if ($this->rateLimitReached()) {
@@ -194,6 +248,7 @@ class VirusTotalUrlChecker
             'verdict' => $verdict,
             'message' => $message,
             'stats' => $stats,
+            'url_id' => $urlId,
             'report_url' => 'https://www.virustotal.com/gui/url/'.$urlId,
         ];
     }
