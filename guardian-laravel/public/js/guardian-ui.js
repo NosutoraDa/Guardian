@@ -53,7 +53,12 @@
         document.body.classList.add('page-navigating');
     });
 
-    window.lucide?.createIcons();
+    const renderIcons = () => window.lucide?.createIcons();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderIcons, { once: true });
+    } else {
+        renderIcons();
+    }
 
     const consentModal = document.getElementById('consent-modal');
     if (consentModal) {
@@ -81,7 +86,6 @@
                 document.getElementById('consent-label').textContent = label;
                 consentModal.classList.remove('hidden'); consentModal.setAttribute('aria-hidden', 'false');
                 document.body.classList.add('consent-open');
-                window.lucide?.createIcons();
                 checkbox.focus();
                 return new Promise(resolve => { resolveConsent = resolve; });
             },

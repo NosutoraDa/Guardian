@@ -161,7 +161,6 @@
         });
         history.prepend(row);
     }
-    window.lucide?.createIcons();
 })();
 </script>
 @endpush

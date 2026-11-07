@@ -264,7 +264,6 @@
         approvedFile = null;
         window.setTimeout(() => { updateSelectedFile(); Robot.setState('idle', 'Pilih atau unggah berkas untuk dipindai oleh Guardian.'); }, 0);
     });
-    window.lucide?.createIcons();
 })();
 </script>
 @endpush

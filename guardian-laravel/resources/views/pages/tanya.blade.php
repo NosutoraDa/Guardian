@@ -56,7 +56,6 @@
         } catch (error) { addMsg(error.message || 'Maaf, jawaban belum bisa diambil. Coba lagi.', 'bot'); }
         finally { submit.disabled = false; typing.classList.add('hidden'); input.focus(); }
     });
-    window.lucide?.createIcons();
 })();
 </script>
 @endpush

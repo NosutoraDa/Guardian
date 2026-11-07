@@ -2,6 +2,8 @@
 
 Guardian is a Laravel digital-safety app for checking suspicious links and files and asking questions about online scams.
 
+**Live app:** [guardian-protect.up.railway.app](https://guardian-protect.up.railway.app)
+
 ## Features
 
 - **Chatbot:** Uses the Gemini Developer API for digital-safety guidance. It has no local scripted-answer fallback.
@@ -11,7 +13,7 @@ Guardian is a Laravel digital-safety app for checking suspicious links and files
 
 ## Local development requirements
 
-These are the requirements for running Guardian on your own computer with Laravel's local development server. They are not Vercel deployment requirements; Vercel setup will need to be documented separately.
+These are the requirements for running Guardian on your own computer with Laravel's local development server. For the live Railway deployment, see [Railway deployment](#railway-deployment).
 
 - PHP 8.2+ with `curl`, `fileinfo`, `mbstring`, `openssl`, `pdo_sqlite`, `xml`, and `zip` extensions
 - Composer 2
@@ -33,6 +35,12 @@ php artisan serve
 ```
 
 Open [http://127.0.0.1:8000](http://127.0.0.1:8000). The home page redirects to the Links tool.
+
+## Railway deployment
+
+The production app is hosted at [guardian-protect.up.railway.app](https://guardian-protect.up.railway.app). The Laravel project is in `guardian-laravel/`; use that as Railway's service root directory when configuring a new deployment.
+
+Set deployment values in Railway's Variables panel, not in committed files. Use `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://guardian-protect.up.railway.app`, a generated `APP_KEY`, and the Gemini and VirusTotal API keys if those features are enabled. Keep provider keys private and rotate them if they are exposed. Laravel creates its writable runtime storage directories when the web process starts.
 
 ## Configure API keys
 
