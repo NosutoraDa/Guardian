@@ -9,7 +9,7 @@
     <div id="guardian-avatar-wrap" class="relative flex items-center justify-center p-1">
         <canvas id="guardian-particles" class="particle-canvas"></canvas>
         <button id="mascot-toggle-menu" class="float-anim cursor-pointer relative transition-transform duration-150 ease-out hover:scale-105" type="button" aria-label="Klik Guardian untuk reaksi">
-            <svg id="robot-svg" class="guardian-avatar-svg w-36 h-36 sm:w-44 sm:h-44" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Maskot robot Guardian">
+            <svg id="robot-svg" class="guardian-avatar-svg w-36 h-36 sm:w-44 sm:h-44" style="width:160px;height:160px;max-width:100%" width="160" height="160" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Maskot robot Guardian">
                 <path d="M 66 110 C 66 45, 136 45, 136 110 Z" fill="#b066fe" transform="rotate(-16 101 77)"/>
                 <path d="M 264 110 C 264 45, 334 45, 334 110 Z" fill="#b066fe" transform="rotate(16 299 77)"/>
                 <rect x="50" y="80" width="300" height="270" rx="90" fill="#e2d5f8"/>
