@@ -7,6 +7,7 @@
     safe: { label: 'Pemeriksaan selesai', color: '#34d399', glow: 'glow-green', mouth: 'M 150 255 Q 200 300 250 255' },
   };
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const lowPowerScreen = window.matchMedia('(max-width: 640px), (hover: none)').matches;
   let audioEnabled = true;
   let audioContext = null;
   let particles = [];
@@ -91,10 +92,26 @@
   const stage = document.getElementById('guardian-avatar-wrap');
   const canvas = document.getElementById('guardian-particles');
   const ctx = canvas?.getContext('2d');
+  let stageVisible = !stage;
+  if (stage && 'IntersectionObserver' in window) {
+    stageVisible = false;
+    new IntersectionObserver(([entry]) => {
+      stageVisible = entry.isIntersecting;
+      stage.classList.toggle('is-in-view', stageVisible);
+      if (!stageVisible && frame !== null) {
+        cancelAnimationFrame(frame);
+        frame = null;
+        particles = [];
+        ctx?.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }, { threshold: 0.05 }).observe(stage);
+  } else {
+    stage?.classList.add('is-in-view');
+  }
   function resizeCanvas() {
     if (!canvas || !stage) return;
     const rect = stage.getBoundingClientRect();
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const ratio = lowPowerScreen ? 1 : Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = rect.width * ratio; canvas.height = rect.height * ratio;
     canvas.style.width = `${rect.width}px`; canvas.style.height = `${rect.height}px`;
     ctx?.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -158,13 +175,15 @@
   window.addEventListener('resize', resizeCanvas, { passive: true });
   resizeCanvas();
 
-  if (!reducedMotion) {
+  if (!reducedMotion && !lowPowerScreen) {
     window.setInterval(() => {
+      if (!stageVisible || document.hidden) return;
       const eyes = [document.getElementById('left-eye'), document.getElementById('right-eye')];
       eyes.forEach(eye => { if (eye) { eye.style.transformBox = 'fill-box'; eye.style.transformOrigin = 'center'; eye.style.transform = 'scaleY(.12)'; } });
       window.setTimeout(() => eyes.forEach(eye => { if (eye) eye.style.transform = ''; }), 140);
     }, 4600);
     document.addEventListener('pointermove', event => {
+      if (!stageVisible || document.hidden) return;
       const face = document.getElementById('guardian-face');
       const svg = document.getElementById('robot-svg');
       if (!face || !svg) return;

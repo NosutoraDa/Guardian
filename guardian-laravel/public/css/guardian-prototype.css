@@ -473,6 +473,9 @@
         @keyframes history-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .link-form-row input { min-width: 0; }
         .link-history-wrap { padding-top: 8px; }
+        .link-demo-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 2px; }
+        .link-demo-row > span { color: #91889c; font-size: 11px; font-weight: 700; }
+        .link-demo-row small { color: #847b92; font-size: 10px; }
         .home-prototype-card { min-height: min(660px,calc(100vh - 130px)); display: flex; align-items: center; justify-content: center; }
         .home-shortcut { display: flex; min-height: 155px; flex-direction: column; align-items: flex-start; padding: 16px; border: 1px solid #f0e3fb; border-radius: 17px; color: #202033; background: rgba(255,255,255,.72); box-shadow: 0 3px 6px rgba(48,16,75,.05); text-decoration: none; transition: all .25s; }
         .home-shortcut:hover { transform: translateY(-4px); border-color: #d8b4fe; box-shadow: 0 12px 22px rgba(126,34,206,.13); }
@@ -551,3 +554,70 @@
         /* Let document content determine page height so long reports remain reachable. */
         html { height: auto !important; min-height: 100%; overflow-x: clip !important; overflow-y: auto !important; }
         body { height: auto !important; min-height: 100vh; overflow-x: clip !important; overflow-y: visible !important; }
+
+        /* Phone layout: compact header, readable controls, and no horizontal overflow. */
+        @media (max-width: 640px) {
+            .top-navbar { top: max(8px, env(safe-area-inset-top)); width: calc(100% - 20px); min-height: 58px; padding: 7px 10px; }
+            .brand-logo { gap: 7px; font-size: 14px; }
+            .brand-robot-icon { width: 28px; height: 28px; }
+            .mobile-menu-overlay { top: calc(74px + env(safe-area-inset-top)); width: calc(100% - 20px); max-height: calc(100dvh - 90px); overflow-y: auto; padding: 14px; border-radius: 20px; }
+            .mobile-menu-links a { min-height: 48px; padding: 12px; font-size: 14px; }
+            .stage-container { width: 100%; min-height: 100dvh; gap: 10px; padding: calc(78px + env(safe-area-inset-top)) 10px 20px; }
+            body[data-robot="file"] .stage-container,
+            body[data-robot="link"] .stage-container,
+            body[data-robot="link-report"] .stage-container { gap: 8px; padding-top: calc(78px + env(safe-area-inset-top)); }
+            .stage-container > .glass-card { width: 100%; max-width: 560px; padding: 18px 15px !important; border-radius: 20px; }
+            .external-center-robot-stage { width: 100%; margin-bottom: 0; }
+            .external-center-robot-stage > div:first-child { position: absolute; top: 0; right: 0; z-index: 2; width: auto; margin: 0; padding: 0; }
+            #guardian-avatar-wrap { width: 132px; height: 132px; padding: 0; }
+            #robot-svg,.external-center-robot-stage .guardian-avatar-svg { width: 124px; height: 124px; }
+            .tool-prototype-card h2,.file-tool-panel h2,.chat-prototype-card h2 { font-size: 18px; line-height: 1.3; }
+            .link-form-row { display: grid; grid-template-columns: minmax(0,1fr); gap: 9px; }
+            .link-form-row input,.chat-prototype-form input { width: 100%; min-height: 46px; font-size: 16px; }
+            .link-form-row button,.file-scan-button,.file-clear-button { width: 100%; min-height: 46px; }
+            .file-samples,.chat-sample-strip { max-width: 100%; overflow-x: auto; justify-content: flex-start; flex-wrap: nowrap; padding-bottom: 5px; }
+            .link-demo-row { align-items: flex-start; }
+            .link-demo-row > span,.link-demo-row small { width: 100%; }
+            .link-demo-row .sample-danger { width: 100%; min-height: 42px; }
+            .sample-danger,.sample-normal { min-height: 36px; }
+            .file-drop { min-height: 118px; padding: 16px 12px; }
+            .chat-prototype-card { min-height: min(620px,calc(100dvh - 100px)); }
+            .chat-prototype-log { min-height: 180px; max-height: 42dvh; }
+            .chat-prototype-form { gap: 8px; }
+            .chat-prototype-form button { width: 46px; height: 46px; flex-basis: 46px; }
+            .consent-backdrop { align-items: end; padding: 10px; }
+            .consent-dialog { width: 100%; max-height: calc(100dvh - 20px); padding: 22px 18px; border-radius: 22px 22px 16px 16px; }
+            .consent-actions { display: grid; grid-template-columns: 1fr 1fr; }
+            .consent-cancel,.consent-accept { min-height: 46px; padding: 10px; }
+            #toastContainer { right: 10px; bottom: max(10px,env(safe-area-inset-bottom)); left: 10px; }
+            .toast-msg { width: 100%; }
+            .footer { width: 100%; padding: 12px; }
+        }
+        @media (max-width: 380px) {
+            .stage-container > .glass-card { padding: 16px 12px !important; }
+            .mobile-menu-links a { font-size: 13px; }
+            .consent-dialog h2 { font-size: 19px; }
+            .consent-actions { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 640px) {
+            #waveCanvas { image-rendering: auto; }
+            body::after { animation: none !important; }
+            .top-navbar,.mobile-menu-overlay,.glass-card,.consent-dialog {
+                -webkit-backdrop-filter: none !important;
+                backdrop-filter: none !important;
+            }
+            .top-navbar { background: rgba(255,255,255,.97); }
+            .mobile-menu-overlay,.glass-card { background: rgba(255,255,255,.96); }
+            .float-anim,.home-shortcut,.guardian-avatar-svg { animation: none !important; }
+            .home-shortcut { transition: none; }
+            .home-shortcut:hover { transform: none; }
+        }
+
+        /* Hold decorative animation until its section is visible, or while tab is hidden. */
+        .external-center-robot-stage:not(.is-in-view) .float-anim,
+        .stage-container > .glass-card:not(.is-in-view),
+        .stage-container > .glass-card:not(.is-in-view) *,
+        body.page-hidden::after,
+        body.page-hidden * { animation-play-state: paused !important; }
+        .external-center-robot-stage.is-in-view .float-anim { animation-play-state: running; }

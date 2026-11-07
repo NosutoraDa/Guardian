@@ -19,11 +19,10 @@
                 <button type="button" id="check-btn" class="prototype-primary">🔍 Pindai Link</button>
             </div>
         </div>
-        <div class="flex flex-wrap gap-1.5 items-center pt-1">
-            <span class="text-[11px] font-semibold text-gray-400">Coba sampel:</span>
-            <button type="button" data-url="https://promo-hadiah-bca-official.online" class="sample-danger">Link Palsu (.online)</button>
-            <button type="button" data-url="https://undian-shopeepay-terbaru.xyz" class="sample-danger">Link Phishing (.xyz)</button>
-            <button type="button" data-url="https://www.tokopedia.com" class="sample-normal">Web Resmi (Tokopedia)</button>
+        <div class="link-demo-row">
+            <span>Latihan keamanan</span>
+            <button type="button" id="simulate-phishing" class="sample-danger">Lihat simulasi peringatan phishing</button>
+            <small>Contoh latihan lokal; tidak membuka atau mengirim tautan.</small>
         </div>
         <div class="link-history-wrap">
             <div class="flex items-center justify-between"><div><h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Riwayat Analisis Link</h3><p class="mt-0.5 text-[10px] text-gray-400">Tersimpan di browser ini</p></div><button id="clear-link-history" type="button" class="text-xs text-gray-400 hover:text-purple-700">Bersihkan</button></div>
@@ -92,7 +91,16 @@
         return 'idle';
     }
     input.addEventListener('input', () => { approvedUrl = null; });
-    document.querySelectorAll('[data-url]').forEach(chip => chip.addEventListener('click', () => { input.value = chip.dataset.url; approvedUrl = null; input.focus(); }));
+    document.getElementById('simulate-phishing').addEventListener('click', () => {
+        const sampleUrl = 'https://verifikasi-hadiah.example';
+        const sampleReport = {
+            status: 'complete',
+            verdict: 'malicious',
+            message: 'SIMULASI: pola domain hadiah dan verifikasi akun sering dipakai untuk mencuri data. Ini contoh edukasi, bukan hasil VirusTotal.',
+        };
+        addEntry(sampleUrl, sampleReport, true);
+        Robot.setState('danger', sampleReport.message);
+    });
     document.getElementById('clear-link-history').addEventListener('click', () => {
         history.replaceChildren(); empty.hidden = false;
         try { localStorage.removeItem(historyStorageKey); } catch (_) { }
