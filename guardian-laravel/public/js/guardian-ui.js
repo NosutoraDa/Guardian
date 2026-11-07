@@ -20,7 +20,6 @@
 
             if (open) {
                 menu.hidden = false;
-                void menu.offsetWidth;
                 transitionFrame = requestAnimationFrame(() => {
                     if (menuIsOpen && currentTransition === transitionId) menu.classList.add('is-open');
                     transitionFrame = null;
@@ -30,7 +29,7 @@
                 closeTimer = window.setTimeout(() => {
                     if (!menuIsOpen && currentTransition === transitionId) menu.hidden = true;
                     closeTimer = null;
-                }, 460);
+                }, 240);
             }
         };
 
@@ -130,7 +129,7 @@
     ];
     function resize() {
         smallScreen = smallScreenQuery.matches;
-        const ratio = smallScreen ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+        const ratio = smallScreen ? 1 : Math.min(window.devicePixelRatio || 1, 1.25);
         width = window.innerWidth; height = window.innerHeight;
         canvas.width = width * ratio; canvas.height = height * ratio;
         canvas.style.width = `${width}px`; canvas.style.height = `${height}px`;
@@ -142,7 +141,7 @@
         const gradient = context.createLinearGradient(0, base - wave.amplitude - 20, 0, height);
         gradient.addColorStop(0, wave.top); gradient.addColorStop(.35, wave.middle); gradient.addColorStop(1, wave.bottom);
         context.beginPath(); context.moveTo(0, height); context.lineTo(0, base);
-        const pointSpacing = smallScreen ? 8 : 2;
+        const pointSpacing = smallScreen ? 8 : 4;
         for (let x = 0; x <= width; x += pointSpacing) {
             const y = base + Math.sin(x * wave.length + step * wave.speed + wave.phase) * wave.amplitude
                 + Math.sin(x * wave.length * .4 + step * .6) * wave.amplitude * .35;

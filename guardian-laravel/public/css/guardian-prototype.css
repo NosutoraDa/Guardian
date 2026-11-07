@@ -139,7 +139,7 @@
             opacity: 0;
             visibility: hidden;
             z-index: 45;
-            transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.68, -0.6, 0.32, 1.6), visibility 0.35s;
+            transition: opacity 0.2s ease, transform 0.22s ease, visibility 0.2s;
         }
 
         .mobile-menu-overlay.is-open {
