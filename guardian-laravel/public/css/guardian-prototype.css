@@ -605,8 +605,9 @@
             .consent-actions { grid-template-columns: 1fr; }
         }
 
-        @media (max-width: 640px) {
-            #waveCanvas { image-rendering: auto; }
+        @media (max-width: 640px), (hover: none) {
+            #waveCanvas { display: none !important; }
+            body { background-color: #fff; background-image: radial-gradient(ellipse at 15% 8%, #f3e8ff 0, transparent 36%), radial-gradient(ellipse at 88% 78%, #ede9fe 0, transparent 34%), linear-gradient(180deg,#fff 0%,#fff 65%,#f3e8ff 84%,#c084fc 100%); background-attachment: scroll; }
             body::after { animation: none !important; }
             .top-navbar,.mobile-menu-overlay,.glass-card,.consent-dialog {
                 -webkit-backdrop-filter: none !important;
