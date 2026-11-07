@@ -8,13 +8,18 @@
   };
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const lowPowerScreen = window.matchMedia('(max-width: 640px), (hover: none)').matches;
+  let currentState = 'idle';
   let audioEnabled = true;
   let audioContext = null;
   let particles = [];
   let frame = null;
+  let idleResetTimer = null;
 
   function setState(name, message) {
     const state = states[name] || states.idle;
+    currentState = states[name] ? name : 'idle';
+    if (idleResetTimer !== null) window.clearTimeout(idleResetTimer);
+    idleResetTimer = null;
     const text = document.getElementById('speech-text');
     const eyeLeft = document.getElementById('left-eye');
     const eyeRight = document.getElementById('right-eye');
@@ -52,6 +57,12 @@
       mascot?.classList.add('guardian-safe-reaction');
       burst('#34d399'); pulse(); playTone(780);
       window.setTimeout(() => mascot?.classList.remove('guardian-safe-reaction'), 1800);
+    }
+    if (name === 'safe' || name === 'danger') {
+      idleResetTimer = window.setTimeout(() => {
+        idleResetTimer = null;
+        setState('idle', 'Guardian kembali siaga. Hasil pemindaian tetap tersedia di halaman.');
+      }, 30000);
     }
   }
 
@@ -142,6 +153,7 @@
   }
 
   function react() {
+    if (currentState !== 'idle') return;
     const left = document.getElementById('left-eye');
     const right = document.getElementById('right-eye');
     const mouth = document.getElementById('smooth-mouth');
