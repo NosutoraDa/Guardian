@@ -508,6 +508,9 @@
         .stage-container > .glass-card { max-width: 620px; padding: clamp(18px,3vw,26px) !important; }
         .file-tool-panel,.tool-prototype-card,.chat-prototype-card { max-width: 620px; }
         .external-center-robot-stage { max-width: 540px; margin-bottom: 8px; }
+        /* Keep the standalone mascot bounded even if utility CSS fails to load. */
+        #guardian-avatar-wrap { width: 176px; min-width: 0; min-height: 0; }
+        #robot-svg { display: block; width: 160px; height: 160px; max-width: 100%; }
         .external-center-robot-stage .guardian-avatar-svg { width: 8rem; height: 8rem; }
         @media (min-width: 640px) { .external-center-robot-stage .guardian-avatar-svg { width: 10rem; height: 10rem; } }
         .guardian-reaction-pop { animation: guardian-reaction-pop .62s cubic-bezier(.2,.8,.2,1) both !important; }
