@@ -45,6 +45,14 @@
         });
     }
 
+    document.addEventListener('click', event => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const link = event.target.closest('a[href]');
+        if (!link || link.origin !== window.location.origin || link.target === '_blank' || link.hasAttribute('download')) return;
+        if (link.hash && link.pathname === window.location.pathname && link.search === window.location.search) return;
+        document.body.classList.add('page-navigating');
+    });
+
     window.lucide?.createIcons();
 
     const consentModal = document.getElementById('consent-modal');

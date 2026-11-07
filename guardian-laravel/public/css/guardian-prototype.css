@@ -621,3 +621,15 @@
         body.page-hidden::after,
         body.page-hidden * { animation-play-state: paused !important; }
         .external-center-robot-stage.is-in-view .float-anim { animation-play-state: running; }
+
+        .top-navbar { view-transition-name: app-header; }
+        .page-navigating #mobileMenu { opacity: 0 !important; visibility: hidden !important; transition: none !important; }
+        @view-transition { navigation: auto; }
+        ::view-transition-group(root),::view-transition-group(app-header) { animation-duration: 200ms; animation-timing-function: cubic-bezier(.22,1,.36,1); }
+        ::view-transition-old(root) { animation: page-swap-out 140ms ease-out both; }
+        ::view-transition-new(root) { animation: page-swap-in 200ms cubic-bezier(.22,1,.36,1) both; }
+        @keyframes page-swap-out { to { opacity: 0; } }
+        @keyframes page-swap-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        @media (prefers-reduced-motion: reduce) {
+            ::view-transition-old(root),::view-transition-new(root) { animation: none; }
+        }
